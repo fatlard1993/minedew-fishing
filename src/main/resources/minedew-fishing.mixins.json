@@ -2,12 +2,9 @@
   "required": true,
   "package": "com.minedew.fishing.mixin",
   "compatibilityLevel": "JAVA_25",
-  "mixins": [],
-  "client": [
-    "FishingBobberEntityMixin",
-    "FishingRodItemMixin",
-    "InGameHudMixin",
-    "MinecraftClientMixin"
+  "mixins": [
+    "FishingHookMixin",
+    "FishingRodItemMixin"
   ],
   "injectors": {
     "defaultRequire": 1

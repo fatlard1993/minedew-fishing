@@ -1,5 +1,5 @@
 plugins {
-    id 'net.fabricmc.fabric-loom' version '1.15.5'
+    id 'net.fabricmc.fabric-loom' version '1.17.17'
     id 'maven-publish'
 }
 
@@ -11,6 +11,7 @@ base {
 }
 
 repositories {
+    mavenLocal()
     maven { url "https://maven.nucleoid.xyz" }
     mavenCentral()
 }
@@ -19,6 +20,7 @@ dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    implementation(project(':pandorical'))
 }
 
 processResources {
