@@ -10,18 +10,22 @@ When a fish bites (detected from vanilla's own bite signal, not a heuristic), an
 
 ### 1. Set the hook
 
-A ring winds up around your reticle, then snaps bright and the prompt reads **SET!**. Right-click in
-that window to set the hook.
+Exactly the way you already do it: the bobber splashes and goes under, so right-click.
 
-Click too early and you have jumped the gun; let the window lapse and the bite is gone. Either way
-the fish spits the hook and the cast is over, so there is one thing to get right before the fight
-even starts. There is a short grace period after the window visually closes, which is where the
-mod's network tolerance lives.
+There is no extra prompt for this and there is not meant to be. The window is open for as long as
+the bobber is under, because it *is* vanilla's own bite window, so "click while it is under" is the
+whole rule and it is one you already know. Click before the bite and you reel in an empty line; let
+the bite lapse and it is gone. There is a short grace period after the bobber pops back up, which is
+where the mod's network tolerance lives.
 
 ### 2. Fight it on the bar
 
 A water column appears with two things in it: a **marker**, swimming up and down on its own, and
 your **bobber**, a bar you keep under it.
+
+Take a second to look at it if you want one. The fight does not start until your first click: until
+then the bar hangs where it is, the meter does not move, and the only thing happening is the fish
+showing you how it swims.
 
 The bobber is driven by **click impulses**. Every right-click gives it one kick upward; gravity pulls
 it down between clicks. Tap faster to rise, ease off to sink. It is deliberately not a held input:
@@ -69,7 +73,9 @@ big fish cut up, which is what actually happened. Vanilla clients see the ordina
 
 ## Tips
 
-- The hook set is the only pure reflex moment; the fight rewards smooth cadence over fast hands
+- The hook set is the only timed moment, and it is vanilla's: watch the bobber, not the screen
+- Nothing is lost by taking a moment to read the fish before your first click. The fight is waiting
+  for you, not running without you
 - Tapping at a steady rate holds the bobber level. Learn where that rate is and everything else is a
   nudge away from it
 - Leaving the rod alone will not land you a fish, and neither will an autoclicker. Both were measured
@@ -91,10 +97,10 @@ minedew-fishing jar is ever needed on a client:
 - The player's click is the ordinary rod right-click, which the server already receives as a vanilla
   use packet. The mod observes it server-side during an encounter and cancels vanilla reeling. There
   is no custom packet and no client-reported timing.
-- The encounter renders as a **Pandorical HUD overlay** driven entirely by declarative updates pushed
-  from the server, including Pandorical's `particle_burst` component for the hook-set ring and the
-  chest's capture ring, which the client animates itself off a phase clock rather than being fed
-  per-tick.
+- The fight renders as a **Pandorical HUD overlay** driven entirely by declarative updates pushed
+  from the server, including Pandorical's `particle_burst` component for the chest's capture ring,
+  which the client animates itself off a phase clock rather than being fed per-tick. The hook set
+  renders nothing at all: vanilla's own splash and dipped bobber are the prompt.
 
 **The Pandorical mod is required client-side.** If a connecting player doesn't have Pandorical, this
 mod leaves their fishing hook alone entirely and vanilla's normal fishing behavior applies unmodified

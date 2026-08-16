@@ -3,7 +3,6 @@ package com.minedew.fishing.encounter;
 import com.minedew.fishing.MinedewFishing;
 import com.minedew.fishing.fish.FishSpecies;
 import com.minedew.fishing.fish.HookedCatch;
-import com.minedew.fishing.hud.HookSetHud;
 import com.minedew.fishing.hud.MinigameHud;
 import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.triggers.CriteriaTriggers;
@@ -36,18 +35,20 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Owns every live encounter and drives them from the server tick.
  *
- * <p>An encounter is two stages. The <b>hook set</b> is one telegraphed timing window: a click
- * inside it hooks whatever bit, a click before it or no click at all loses the bite. Then the
- * <b>fight</b>, a balancing act rather than a reflex test: the marker swims up and down the track on
- * its own, the player taps the rod to keep a bobber bar under it, and the catch meter fills while
- * the two overlap.
+ * <p>An encounter is two stages. The <b>hook set</b> is one timing window, opening on the tick of
+ * the bite and running as long as vanilla's own bite lasts: a click inside it hooks whatever bit, no
+ * click at all loses it. It has no overlay. Vanilla already announces a bite with a splash and a
+ * bobber that goes under and stays under, which is the cue every Minecraft player has been trained
+ * on, so the mod adds nothing to it but a louder splash of its own. Then the <b>fight</b>, a
+ * balancing act rather than a reflex test: the marker swims up and down the track on its own, the
+ * player taps the rod to keep a bobber bar under it, and the catch meter fills while the two
+ * overlap.
  *
  * <p>Clicks are impulses, which is what makes this workable over a network at all: an impulse is an
  * event that can arrive whenever it arrives, where a held-input design would need continuous state
  * synchronisation to stay honest.
  *
- * <p>All numbers live in {@link MinigameTuning}; all rendering lives in {@link MinigameHud} and
- * {@link HookSetHud}.
+ * <p>All numbers live in {@link MinigameTuning}; all rendering lives in {@link MinigameHud}.
  */
 public final class FishingEncounterManager {
     private FishingEncounterManager() {}
@@ -59,9 +60,25 @@ public final class FishingEncounterManager {
         return ACTIVE.containsKey(uuid);
     }
 
+    /**
+     * True while this exact hook is in a fight, which is when the hook mixin holds vanilla's
+     * {@code nibble} up (see {@link MinigameTuning#LINE_TAUT_NIBBLE_TICKS}). Not true during the hook
+     * set: there the countdown has to run down honestly, because it is the window.
+     */
+    public static boolean isFightingWithHook(UUID uuid, int hookEntityId) {
+        FishingEncounter encounter = ACTIVE.get(uuid);
+        return encounter != null && !encounter.finished
+            && !encounter.inHookSet() && encounter.hookEntityId == hookEntityId;
+    }
+
     // --- Lifecycle ---
 
-    public static void startEncounter(ServerPlayer player, FishingHook hook, HookedCatch hooked) {
+    /**
+     * @param nibbleTicks vanilla's freshly rolled {@code nibble} countdown, which is both how long
+     *                    the bobber stays under and how long the hook-set window is open
+     */
+    public static void startEncounter(ServerPlayer player, FishingHook hook, HookedCatch hooked,
+                                      int nibbleTicks) {
         if (ACTIVE.containsKey(player.getUUID())) return;
         if (!MinigameHud.canRender(player)) {
             // No Pandorical client: nothing to show and no way to run the minigame.
@@ -70,22 +87,22 @@ public final class FishingEncounterManager {
         }
 
         FishingEncounter encounter = new FishingEncounter(
-            player, hook.getId(), hooked, RandomSource.create());
+            player, hook.getId(), hooked, RandomSource.create(), nibbleTicks);
         ACTIVE.put(player.getUUID(), encounter);
         HUD_STATE.put(player.getUUID(), new MinigameHud.HudSnapshot());
 
+        // The whole hook-set telegraph: vanilla's own splash, played again at the player and at full
+        // volume so it carries at cast range. Vanilla's is 0.25 at the bobber, which is easy to miss.
         playSound(player, SoundEvents.FISHING_BOBBER_SPLASH, 1.0F, 1.0F);
-        HookSetHud.show(encounter);
-        MinedewFishing.LOGGER.debug("[minedew-fishing] {} hooked {} (tier {}, bobber {}, treasure {})",
+        MinedewFishing.LOGGER.debug("[minedew-fishing] {} hooked {} (tier {}, bobber {}, window {}, treasure {})",
             player.getName().getString(), hooked.label(), encounter.difficulty,
-            encounter.bobberSize, encounter.hasTreasure);
+            encounter.bobberSize, encounter.phaseTicksRemaining, encounter.hasTreasure);
     }
 
     public static void abortIfActive(ServerPlayer player) {
         FishingEncounter encounter = ACTIVE.remove(player.getUUID());
         HUD_STATE.remove(player.getUUID());
         if (encounter == null) return;
-        HookSetHud.hide(player);
         MinigameHud.hide(player);
     }
 
@@ -107,7 +124,6 @@ public final class FishingEncounterManager {
 
             FishingHook hook = resolveHook(encounter);
             if (hook == null || hook.isRemoved()) {
-                HookSetHud.hide(encounter.player);
                 MinigameHud.hide(encounter.player);
                 forget(it, encounter);
                 continue;
@@ -123,20 +139,15 @@ public final class FishingEncounterManager {
         }
     }
 
+    /**
+     * Run out the borrowed window. Nothing is drawn and nothing is played: the bobber being under is
+     * the whole prompt, and it stays under on its own until vanilla's countdown ends, which is the
+     * same tick this window does.
+     */
     private static void tickHookSet(FishingEncounter encounter) {
-        FishingEncounter.Phase before = encounter.phase;
-        boolean lapsed = encounter.stepHookSet();
-
-        if (lapsed) {
+        if (encounter.stepHookSet()) {
             // Never even tried: the fish spits the hook
             fail(encounter, "the bite was missed");
-            return;
-        }
-        if (encounter.phase != before) {
-            HookSetHud.updatePhase(encounter);
-            if (encounter.phase == FishingEncounter.Phase.COMMIT) {
-                playSound(encounter.player, SoundEvents.NOTE_BLOCK_BELL.value(), 0.5F, 1.8F);
-            }
         }
     }
 
@@ -177,8 +188,12 @@ public final class FishingEncounterManager {
 
     /**
      * One rod right-click, meaning whatever the current stage says it means: during the hook set it
-     * is the commit (or a flinch, if the window has not opened yet), and during the fight it queues
-     * a single upward impulse for the next tick.
+     * is the commit, and during the fight it queues a single upward impulse for the next tick.
+     *
+     * <p>There is no early-click case to handle here, because clicking before the bite never reaches
+     * this method: with no encounter open, {@code FishingRodItemMixin} lets the use through and
+     * vanilla reels an empty line in, ending the cast. Jumping the gun still costs the bite, it just
+     * costs it in vanilla's own words.
      *
      * <p>The click arrives as the ordinary vanilla use packet (see {@code FishingRodItemMixin}), so
      * there is no client mod, no custom packet and no client-reported timing. At most one impulse is
@@ -194,15 +209,9 @@ public final class FishingEncounterManager {
             return;
         }
 
-        if (encounter.hookWindowOpen()) {
-            encounter.beginFight();
-            HookSetHud.hide(player);
-            MinigameHud.show(encounter);
-            playSound(player, SoundEvents.FISHING_BOBBER_RETRIEVE, 0.7F, 1.4F);
-        } else {
-            // Clicked during the tell: the hook was set on nothing
-            fail(encounter, "you jumped the gun");
-        }
+        encounter.beginFight();
+        MinigameHud.show(encounter);
+        playSound(player, SoundEvents.FISHING_BOBBER_RETRIEVE, 0.7F, 1.4F);
     }
 
     // --- Outcome ---
@@ -235,7 +244,6 @@ public final class FishingEncounterManager {
         if (hook != null && !hook.isRemoved()) hook.discard();
 
         playSound(encounter.player, SoundEvents.ITEM_BREAK.value(), 1.0F, 0.8F);
-        HookSetHud.hide(encounter.player);
         MinigameHud.hide(encounter.player);
         encounter.player.sendOverlayMessage(
             Component.literal("It got away: " + reason).withStyle(ChatFormatting.GRAY));

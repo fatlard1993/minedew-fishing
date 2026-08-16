@@ -13,10 +13,12 @@ import net.minecraft.util.RandomSource;
  * <p>Two stages, both simulated here at server tick rate:
  *
  * <ol>
- *   <li><b>Hook set.</b> One telegraphed timing window: {@link Phase#TELL} (a ring winds up;
- *       clicking now is jumping the gun and loses the bite), {@link Phase#COMMIT} (click), then
- *       {@link Phase#GRACE}, a few ticks of network slack after the window visually closes. Letting
- *       it lapse loses the bite too.</li>
+ *   <li><b>Hook set.</b> One timing window, opening on the tick the fish bites: {@link Phase#COMMIT}
+ *       (vanilla's splash has just played and the bobber is under, so click), then
+ *       {@link Phase#GRACE}, a few ticks of network slack after the bobber pops back up. Letting it
+ *       lapse loses the bite. There is no overlay for this stage and no telegraph of our own; the
+ *       window is vanilla's own {@code nibble} countdown, so it is open exactly while vanilla's own
+ *       cues are showing.</li>
  *   <li><b>Fight.</b> The bar game: a fish marker moving under its
  *       {@link com.minedew.fishing.fish.FishMovementPattern}, a bobber the player keeps aloft by
  *       tapping (one click, one upward impulse; gravity does the rest), a catch meter that fills
@@ -29,7 +31,7 @@ import net.minecraft.util.RandomSource;
  * bobberSize]}.
  */
 public class FishingEncounter {
-    public enum Phase { TELL, COMMIT, GRACE, FIGHT }
+    public enum Phase { COMMIT, GRACE, FIGHT }
 
     public final ServerPlayer player;
     public final int hookEntityId;
@@ -39,7 +41,7 @@ public class FishingEncounter {
 
     // --- Hook set ---
 
-    public Phase phase = Phase.TELL;
+    public Phase phase = Phase.COMMIT;
     public int phaseTicksRemaining;
 
     // --- Fight ---
@@ -64,6 +66,11 @@ public class FishingEncounter {
     public boolean justLeftBobber;
     /** Ticks left of drain-free tolerance after the fish slipped out; absorbs input latency. */
     public int drainGraceTicksRemaining;
+    /**
+     * Ticks the bobber will still hang where the fight started, unless a click ends it first. See
+     * {@link MinigameTuning#BOBBER_HOLD_TICKS}.
+     */
+    public int bobberHeldTicks = MinigameTuning.BOBBER_HOLD_TICKS;
 
     // --- Treasure ---
 
@@ -83,15 +90,21 @@ public class FishingEncounter {
     /** Set once an outcome has been resolved so the tick loop knows to drop this entry. */
     public boolean finished;
 
-    public FishingEncounter(ServerPlayer player, int hookEntityId, HookedCatch hooked, RandomSource random) {
+    /**
+     * @param nibbleTicks vanilla's {@code nibble} countdown for this bite, read at the moment it was
+     *                    rolled. It is how long the bobber will visibly stay under, and therefore how
+     *                    long the hook-set window is open.
+     */
+    public FishingEncounter(ServerPlayer player, int hookEntityId, HookedCatch hooked,
+                            RandomSource random, int nibbleTicks) {
         this.player = player;
         this.hookEntityId = hookEntityId;
         this.hooked = hooked;
         this.difficulty = Mth.clamp(hooked.difficulty(), 1, 4);
         this.random = random;
 
-        this.phase = Phase.TELL;
-        this.phaseTicksRemaining = MinigameTuning.hookTellTicks(this.difficulty);
+        this.phase = Phase.COMMIT;
+        this.phaseTicksRemaining = MinigameTuning.hookWindowTicks(nibbleTicks);
 
         this.fish = new FishMotion(hooked, random);
         this.bobberSize = MinigameTuning.bobberSize(this.difficulty);
@@ -109,33 +122,21 @@ public class FishingEncounter {
 
     // --- Hook set ---
 
+    /** True while a click would set the hook. The window opens with the encounter itself. */
     public boolean inHookSet() {
         return this.phase != Phase.FIGHT;
-    }
-
-    /** True while a click would set the hook rather than jump the gun. */
-    public boolean hookWindowOpen() {
-        return this.phase == Phase.COMMIT || this.phase == Phase.GRACE;
     }
 
     /** Advance the hook-set timer. Returns true when the window has lapsed unclicked. */
     public boolean stepHookSet() {
         if (--this.phaseTicksRemaining > 0) return false;
 
-        switch (this.phase) {
-            case TELL -> {
-                this.phase = Phase.COMMIT;
-                this.phaseTicksRemaining = MinigameTuning.hookCommitTicks(this.difficulty);
-            }
-            case COMMIT -> {
-                this.phase = Phase.GRACE;
-                this.phaseTicksRemaining = MinigameTuning.HOOK_GRACE_TICKS;
-            }
-            default -> {
-                return true;
-            }
+        if (this.phase == Phase.COMMIT) {
+            this.phase = Phase.GRACE;
+            this.phaseTicksRemaining = MinigameTuning.HOOK_GRACE_TICKS;
+            return false;
         }
-        return false;
+        return true;
     }
 
     public void beginFight() {
@@ -149,8 +150,16 @@ public class FishingEncounter {
     /**
      * Advance the whole fight one tick, leaving {@link #justEnteredBobber} / {@link #justLeftBobber}
      * / {@link #justRevealedTreasure} set so the caller can play feedback without recomputing.
+     *
+     * <p>Until the player's first click the fight is only <i>shown</i>, not run: see
+     * {@link #stepHeld()}.
      */
     public void stepFight() {
+        if (this.bobberHeldTicks > 0 && !this.impulseQueued) {
+            stepHeld();
+            return;
+        }
+        this.bobberHeldTicks = 0;
         this.fightTicks++;
 
         this.fish.step();
@@ -159,19 +168,43 @@ public class FishingEncounter {
         boolean wasInside = this.fishInsideBobber;
         this.fishInsideBobber = covers(this.fish.position());
 
+        boolean opening = this.fightTicks <= MinigameTuning.OPENING_FLOOR_TICKS;
+
         if (this.fishInsideBobber) {
             this.drainGraceTicksRemaining = MinigameTuning.DRAIN_GRACE_TICKS;
             this.progress = Math.min(1F, this.progress + this.progressGain);
         } else if (this.drainGraceTicksRemaining > 0) {
             this.drainGraceTicksRemaining--;
-        } else if (this.fightTicks > MinigameTuning.START_GRACE_TICKS) {
-            this.progress = Math.max(0F, this.progress - MinigameTuning.progressDrain(this.difficulty));
+        } else {
+            // The opening floor, not an opening freeze: points won early are still losable, so the
+            // buffer protects a slow start without banking free progress for a bar nobody is holding
+            this.progress = Math.max(opening ? MinigameTuning.PROGRESS_START : 0F,
+                this.progress - MinigameTuning.progressDrain(this.difficulty));
         }
 
         this.justEnteredBobber = !wasInside && this.fishInsideBobber;
         this.justLeftBobber = wasInside && !this.fishInsideBobber;
 
         stepTreasure();
+    }
+
+    /**
+     * A tick before the fight has started: the fish swims and the overlay shows it, the bobber hangs
+     * where it began, and the clock, the meter and the chest are all stopped.
+     *
+     * <p>Everything but the fish is frozen on purpose. Holding the bobber alone would hand a player
+     * who never touches the rod a bar parked across mid-track, which is the best camping spot there
+     * is, and measured a bobber nobody was holding back up to 42% on small cod. Stopping the clock
+     * with it means the wait buys nothing at all: no progress, no chest timer, no fight timeout. It
+     * only means the fight starts when the player does, from where it was always going to start.
+     */
+    private void stepHeld() {
+        this.bobberHeldTicks--;
+        this.fish.step();
+        this.fishInsideBobber = covers(this.fish.position());
+        this.justEnteredBobber = false;
+        this.justLeftBobber = false;
+        this.justRevealedTreasure = false;
     }
 
     private void stepTreasure() {
@@ -199,6 +232,13 @@ public class FishingEncounter {
     }
 
     private void stepBobber() {
+        if (this.bobberHeldTicks > 0 && !this.impulseQueued) {
+            // Hanging where the fight started: no gravity, no drift, nothing to recover from
+            this.bobberHeldTicks--;
+            return;
+        }
+        this.bobberHeldTicks = 0;
+
         if (this.impulseQueued) {
             this.impulseQueued = false;
             this.bobberVelocity = Math.max(this.bobberVelocity, -MinigameTuning.CLICK_FALL_ARREST)

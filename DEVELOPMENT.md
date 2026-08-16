@@ -22,8 +22,10 @@ is no client entrypoint, no client jar, and no custom packet in either direction
 
 - **Input** is the ordinary vanilla rod right-click, observed server-side in `FishingRodItemMixin`.
   During the hook set it is the commit; during the fight it queues one upward impulse.
-- **Output** is a declarative Pandorical HUD push. The client only interpolates between the values
-  the server sends.
+- **Output** is a declarative Pandorical HUD push, for the fight only. The hook set draws nothing:
+  vanilla's own splash and dipped bobber are the cue, and the window is vanilla's own `nibble`
+  countdown, so the prompt and the mechanic are the same object.
+- The client only interpolates between the values the server sends.
 
 If a connecting player has no Pandorical client, `startEncounter` deliberately does nothing and the
 hook is left entirely to vanilla fishing. There is no fallback minigame.
@@ -51,13 +53,15 @@ hook is left entirely to vanilla fishing. There is no fallback minigame.
 - `MinigameTuning`: every feel knob, plus the invariants that constrain them
 
 **HUD** (`hud/`)
-- `HookSetHud`: the hook-set ring and prompt
-- `MinigameHud`: the fight overlay (track, marker, bobber, catch gauge, treasure chest and its ring)
+- `MinigameHud`: the fight overlay (track, marker, bobber, catch gauge, treasure chest and its ring).
+  The only overlay there is; the hook set deliberately has none
 
 **Mixins** (`mixin/`)
 - `FishingHookMixin`: bite detection off vanilla's own `nibble` countdown (the same signal vanilla
-  uses to gate its catch roll), not a bobber-physics heuristic; starts and aborts encounters with the
-  hook's lifecycle
+  uses to gate its catch roll), not a bobber-physics heuristic; hands that countdown to the encounter
+  as the hook-set window, holds it up for the duration of a fight so the line stays taut and vanilla
+  cannot start a second bite underneath one, and starts and aborts encounters with the hook's
+  lifecycle
 - `FishingRodItemMixin`: observes the rod use as minigame input, then cancels it so vanilla's
   `retrieve()` cannot end the cast with an immediate real catch
 
@@ -70,14 +74,26 @@ hook is left entirely to vanilla fishing. There is no fallback minigame.
 
 An encounter is two stages.
 
-**Hook set.** One telegraphed timing window: `TELL` (a ring winds up; clicking now loses the bite),
-`COMMIT` (click), then `GRACE`, a few ticks of network slack after the window visually closes.
-Letting it lapse loses the bite too. Tell and commit lengths shorten with difficulty.
+**Hook set.** One timing window with no overlay at all, opening on the tick of the bite: `COMMIT`
+(vanilla has just played its splash and pulled the bobber under, so click), then `GRACE`, a few ticks
+of network slack after the bobber pops back up. Letting it lapse loses the bite. Clicking *before*
+the bite never reaches the mod at all: with no encounter open, vanilla reels an empty line in and the
+cast is over, so jumping the gun still costs the bite without the mod saying a word about it.
+
+The window length is not a constant of ours. It is vanilla's `nibble` roll for that bite (20-40
+ticks), read off the hook in `FishingHookMixin` at the moment vanilla sets it, which is the same tick
+it plays the splash and flips `DATA_BITING`. That is what pulls the bobber under and keeps it under
+for exactly that many ticks, so the window is open precisely while the cue is showing. Difficulty
+does not shorten it: the difficulty is the fight.
 
 **Fight.** The bar game. The marker swims under its species' pattern; the player taps the rod to keep
 a bobber bar under it (one click, one upward impulse, gravity between clicks, one impulse per tick
 maximum); the catch meter fills while the two overlap and drains while they do not. Full is a catch,
 empty is an escape, and there is a 45 s timeout as a safety net.
+
+The fight does not actually start until the player's first click (or `BOBBER_HOLD_TICKS` at the
+outside): until then the bar hangs where it began and the clock, the meter and the chest timer are
+all stopped, while the fish swims. See the opening buffer under Tuning.
 
 A fight may also carry a **treasure chest**, which surfaces at a fixed spot partway in and has its
 own meter that only fills while the bobber covers it. Time spent on the chest is time not spent on
@@ -96,7 +112,7 @@ disguise.
 | Species | Pattern | Signature | What it feels like |
 |---|---|---|---|
 | **Cod** | `MODERATE_DART` | Retargets every 22-45 ticks, moderate burst, settles hard | The baseline. Moves to a new depth, sits there, moves again. If you can read anything, you can read cod |
-| **Salmon** | `FAST_DART` + `SLOW_SINUSOIDAL` accent | Retargets every 20-40 ticks with the biggest burst of any fish; every ~6 s it drops into a narrow mid-track glide for ~2 s | Runs and glides. Hard lunges, then a stretch where it is suddenly easy while it recovers |
+| **Salmon** | `FAST_DART` + `SLOW_SINUSOIDAL` accent | Retargets every 20-40 ticks with the biggest burst of any fish; every ~6 s it drops into a slow mid-track sweep for ~2 s | Runs and glides. Hard lunges, then a stretch where it is suddenly easy while it recovers |
 | **Tropical Fish** | `FAST_ERRATIC` | Retargets every 18-34 ticks, shortest hold of any fish, faint per-tick tremor | Skittish. Never settles for long, and never quite sits still even when it does |
 | **Pufferfish** | `SLOW_FLOATER` | Retargets every 26-46 ticks, longest holds, rides slightly high | Sluggish and buoyant. Long dead holds and unhurried moves, but it makes you work up-track |
 | **Junk** | `SNAG` | Retargets every 22-45 ticks with an extreme settle damping and a low bias | Not a fish. Dead pauses, a sudden short lurch, a dead stop, dragging low. A second of this and you know you have hooked garbage |
@@ -134,6 +150,35 @@ Briefly:
 3. **The meter's break-even duty cycle `drain / (gain + drain)` must sit in roughly 46-52%.** Below
    it a parked bobber wins on its own; above it not even perfect tracking sustains it.
 
+### The opening buffer
+
+Separate from all three invariants, and do not confuse it with them. Break-even governs a fight
+already in progress; the opening buffer governs whether the player was ever in it. It is three knobs:
+
+| Knob | What it does |
+|---|---|
+| `BOBBER_HOLD_TICKS` | The fight waits for the first click. Bar hangs, clock stopped, meter frozen, only the fish moves |
+| `PROGRESS_START` | Meter the fight opens with, and the floor it cannot fall through while the opening lasts |
+| `OPENING_FLOOR_TICKS` | How long that floor lasts, in fight ticks (so it starts when the player does) |
+
+Three things were learned measuring these, all of them the hard way:
+
+- **The hold is the one that matters, and it is nearly free.** What a slow start costs is altitude,
+  not meter: a second of not clicking is a second of gravity, and no amount of meter buffer pays for
+  arriving to find the bar on the floor of the track. Adding the hold is what turned a catch rate
+  that fell off a cliff past 500 ms of reaction time into one that is flat out to two seconds.
+- **The hold must stop the clock, not just the bar.** Holding the bar alone hands a player who never
+  touches the rod a bar parked across mid-track, which is the best camping spot there is: measured, a
+  bobber nobody was holding went back up to 42% on small cod. Freezing the meter and the clock with
+  it makes the wait buy nothing at all.
+- **Buy reaction time in ticks, not in progress.** `PROGRESS_START` is a permanent credit toward the
+  win and is worth exactly as much to a bar nobody is holding. Taking `OPENING_FLOOR_TICKS` from 6 to
+  35 cost the camping bot almost nothing; taking `PROGRESS_START` from 0.10 to 0.30 instead put a
+  parked bobber back at 43-53% on the easy tiers.
+
+A floor rather than a drain freeze, for the same reason: a freeze makes points won during the opening
+permanent, and a parked bar collects those too.
+
 ### Where to edit
 
 **Fish feel**: `FishMovementPattern` (per-pattern knobs) and `FishSpecies` (which pattern, and the
@@ -144,11 +189,12 @@ narrow speed/aggression multipliers).
 lever and also the most dangerous, because the bar's height is how much of the track a player who
 stops playing covers for free.
 
-**Pacing of the hook set**: `HOOK_TELL_TICKS`, `HOOK_COMMIT_TICKS`, `HOOK_GRACE_TICKS`.
+**Reaction time**: the opening buffer above, never the difficulty knobs.
 
-**HUD**: `hud/MinigameHud.java` and `hud/HookSetHud.java`. Pixel geometry there mirrors
-`generate_textures.py`, which draws each texture at exactly the size it is blitted at; change both
-together.
+**Pacing of the hook set**: `HOOK_GRACE_TICKS` only. The window itself is vanilla's, on purpose.
+
+**HUD**: `hud/MinigameHud.java`. Pixel geometry there mirrors `generate_textures.py`, which draws
+each texture at exactly the size it is blitted at; change both together.
 
 ## Testing
 
@@ -158,14 +204,22 @@ Difficulty is tuned against a simulation, not by eye. The harness drives the rea
 / `FishMotion` / `MinigameTuning` classes (constructed with a null player, which those classes never
 touch) with scripted players, so what it measures is what ships.
 
-It needs three things to be worth anything:
+It needs four things to be worth anything:
 
+- **An orientation delay on every profile.** Ticks at the start of the fight during which the bot
+  does not click at all, because a player has to notice the overlay, find the marker and start a
+  cadence: 250 ms for the ideal profile, 600 ms for the good one, a full second for the sloppy one.
+  This is not a refinement, it is the difference between measuring the game and measuring nothing. A
+  bot that starts tracking on tick 0 is blind to the entire opening, which is how an opening buffer
+  worth 625 ms shipped and was unplayable on contact with a human. Report catch rate as a *curve*
+  against this delay, not just at the profile's value: what you want to see is flat.
 - **A cadence-modulating controller, not a bang-bang one.** The game asks the player to modulate tap
   rate; a bot that clicks every tick it is below the fish oscillates, and will score the slow bots
   above the fast ones.
-- **A parking bot.** Sweep a fixed bobber height and report the best result. A tracking bot alone
-  cannot tell you the game is winnable without playing it, and that is the failure mode this design
-  is most prone to.
+- **A parking bot.** Sweep a fixed bobber height and report the best result, plus the two degenerate
+  ends of that sweep by name (never clicking, and clicking every tick). A tracking bot alone cannot
+  tell you the game is winnable without playing it, and that is the failure mode this design is most
+  prone to.
 - **Latency and fumbles as the skill axis**, since a server-authoritative minigame lives or dies on
   how it degrades over a round trip.
 
@@ -194,8 +248,13 @@ encounter never starts.
   motion is legible on screen, or whether the tap cadence is comfortable on a real hand
 - The simulated treasure-chest cost is a worst case: the bot abandons the fish the instant the chest
   surfaces, where a player can wait until the fish is already near it
-- A bobber parked at mid-track still lands a minority of the easiest fish (measured up to 36% on
-  small salmon). Driving that to zero costs more in fairness to real players than it is worth
+- A bobber parked at mid-track still lands a minority of the easiest fish (measured up to 32% on
+  small salmon, 14% on small pufferfish, under 10% everywhere else). Driving that to zero costs more
+  in fairness to real players than it is worth
+- The hook-set window is inherited from vanilla's `nibble` roll, so it varies 20-40 ticks from bite
+  to bite and nothing in the mod can tighten it for a harder fish. That is the trade for having the
+  cue and the window be the same object, and it is the right trade: the alternative is a telegraph
+  the player has to learn on top of one they already know
 
 ## License
 

@@ -10,11 +10,19 @@ import net.minecraft.util.Mth;
  * simulation in fractions means the HUD can be re-laid-out (a taller track, a different anchor)
  * without re-tuning the physics.
  *
- * <p>An encounter is two stages. First the <b>hook set</b>: a single telegraphed timing window,
- * where a click during {@link #HOOK_COMMIT_TICKS} (plus {@link #HOOK_GRACE_TICKS} of slack) sets
- * the hook, and clicking early or not at all loses the bite. Then the <b>fight</b>: the bar game,
- * where each click is one upward impulse on the bobber and the catch meter fills only while the
- * bobber covers the fish.
+ * <p>An encounter is two stages. First the <b>hook set</b>: a timing window carried entirely by
+ * vanilla's own bite cues (the splash and the bobber going under), open for as long as vanilla's
+ * {@code nibble} countdown says the bobber is under, plus {@link #HOOK_GRACE_TICKS} of network
+ * slack. Clicking in it sets the hook; letting it lapse loses the bite, and clicking before the bite
+ * is vanilla reeling in an empty line. Then the <b>fight</b>: the bar game, where each click is one
+ * upward impulse on the bobber and the catch meter fills only while the bobber covers the fish.
+ *
+ * <p><b>The hook-set window is borrowed, not invented</b>, and that is the point. The cue a player
+ * reacts to is the splash and the dipped bobber, both fired by vanilla on the tick the encounter
+ * starts, and both lasting exactly as long as {@code nibble}. Deriving the window from that same
+ * countdown means the window is open precisely while the cue is showing, so there is nothing to
+ * learn beyond "click while the bobber is under", and anyone who can fish in vanilla can set a hook
+ * here. Difficulty deliberately does not shorten it: the difficulty is the fight.
  *
  * <p><b>The primary fight knobs</b> are {@link #CLICK_IMPULSE}, {@link #BOBBER_GRAVITY} and
  * {@link #BOBBER_DAMPING}. The first two set the cadence the game asks for:
@@ -48,37 +56,55 @@ import net.minecraft.util.Mth;
  * </ol>
  *
  * <p><b>Difficulty is tuned against a headless simulation</b> of the whole fight rather than by eye:
- * an ideal player (no latency, no fumbles, unlimited cadence), a good player (sees the fight 150 ms
- * late, taps up to ~6.7/s, fumbles 8%) and a sloppy player (250 ms, ~5/s, fumbles 25%) each played
- * every species/size 4000 times, alongside a bot that ignores the fish and parks the bobber at the
- * single best fixed height. Measured, for the good player and for the parking bot:
+ * an ideal player (no latency, no fumbles, unlimited cadence, 250 ms to orient), a good player (sees
+ * the fight 150 ms late, taps up to ~6.7/s, fumbles 8%, 600 ms to orient) and a sloppy player
+ * (250 ms late, ~5/s, fumbles 25%, a full second to orient) each played every species/size 4000
+ * times, alongside a bot that ignores the fish and parks the bobber at the single best fixed height.
+ * Measured, for the good player and for the parking bot:
  *
  * <pre>
- *   tier 1: good 78-93%   parked  5-36%    comfortable for a first-timer
- *   tier 2: good 56-86%   parked  0-29%
- *   tier 3: good 25-60%   parked  0-18%    demands attention
- *   tier 4: good  8-43%   parked  0-18%    a real skill check, losable
+ *   tier 1: good 68-84%   parked  3-32%    comfortable for a first-timer
+ *   tier 2: good 52-75%   parked  0-22%
+ *   tier 3: good 24-46%   parked  0-10%    demands attention
+ *   tier 4: good  8-31%   parked  0-7%     a real skill check, losable
  * </pre>
  *
  * The spread within a row is across the four species; the parked column is the number that matters
  * most, because an earlier set of these constants let a bobber left alone land 90-100% of the two
  * easy tiers, which are 80% of all catches.
+ *
+ * <p><b>The orientation delay in those profiles is not a detail.</b> Without it the simulated player
+ * starts tracking on tick 0 with no reaction time, which no human does, and a game can then be tuned
+ * to a shape that is only playable by something that already knew where the fish was. That is not a
+ * hypothetical: the constants this replaced measured fine that way and gave a real player 625 ms to
+ * win or lose the whole fight. Any bot added here gets a reaction time first.
  */
 public final class MinigameTuning {
     private MinigameTuning() {}
 
     // --- Hook set (the timing gate before the bar game) ---
 
-    /** Telegraph before the window opens, by difficulty 1..4. Clicking here loses the bite. */
-    private static final int[] HOOK_TELL_TICKS = {12, 10, 9, 8};
-    /** The window a click has to land in to set the hook, by difficulty 1..4. */
-    private static final int[] HOOK_COMMIT_TICKS = {16, 14, 12, 10};
     /**
-     * Slack after the window closes during which a click still counts. This is the hook set's whole
-     * latency allowance: a click made on the last frame of the window needs about a round trip to
-     * reach the server, and 300 ms covers that comfortably on any sane connection.
+     * Slack after the bobber pops back up during which a click still counts. This is the hook set's
+     * whole latency allowance: a click made on the last frame of the window needs about a round trip
+     * to reach the server, and 400 ms covers that comfortably on any sane connection.
      */
-    public static final int HOOK_GRACE_TICKS = 6;
+    public static final int HOOK_GRACE_TICKS = 8;
+    /**
+     * Guard rails on the borrowed window, in case something else on the server writes {@code nibble}.
+     * Vanilla's own roll is 20-40 ticks and needs neither.
+     */
+    private static final int HOOK_WINDOW_MIN_TICKS = 20;
+    private static final int HOOK_WINDOW_MAX_TICKS = 60;
+    /**
+     * What {@code nibble} is held at, per tick, for the whole fight.
+     *
+     * <p>Vanilla clears {@code nibble} after 20-40 ticks, pops the bobber back up, and rolls a fresh
+     * lure timer, which mid-fight would fire a second bite cue that means nothing. Holding it keeps
+     * the line visibly taut while the fight is on and keeps the cue honest: bobber under means a fish
+     * is on. Any positive value does the job; this is one vanilla roll's worth.
+     */
+    public static final int LINE_TAUT_NIBBLE_TICKS = 20;
 
     // --- Bobber physics (the three primary feel knobs, plus their shaping) ---
 
@@ -104,6 +130,22 @@ public final class MinigameTuning {
     public static final float CLICK_FALL_ARREST = 0.018F;
     /** Fraction of velocity kept, reversed, when the bobber hits the top or bottom of the track. */
     public static final float BOBBER_BOUNCE = 0.25F;
+    /**
+     * Ticks the fight waits, before it starts, for the player's first click. The bobber hangs where
+     * it began and the clock and the meter do not move; only the fish does.
+     *
+     * <p>The most important part of the opening buffer, because what a slow start actually costs is
+     * not meter, it is altitude: a second of not clicking is a second of gravity, and the player
+     * arrives to find the bar on the floor of the track and the fish somewhere above it, needing a
+     * climb before a single point can be scored. No amount of meter buffer fixes that; measured, it
+     * is the difference between a catch rate that falls off a cliff past 500 ms of reaction time and
+     * one that is flat out to two full seconds.
+     *
+     * <p>It is also free, which is the other reason it is the right knob: anybody who is playing ends
+     * it with their first click and never knows it was there, and anybody who is not gets a stopped
+     * clock rather than a free ride.
+     */
+    public static final int BOBBER_HOLD_TICKS = 40;
 
     /**
      * Bobber height as a track fraction, by difficulty 1..4: 29 px down to 24 px of the 144 px track.
@@ -138,11 +180,15 @@ public final class MinigameTuning {
     // --- Catch meter ---
 
     /**
-     * Progress the encounter opens with. Deliberately small: a head start is worth the same to a
-     * player who is tracking and to one who is not, so it is the cheapest thing in here to hand a
-     * parked bobber, and short fights are where parking pays.
+     * Progress the encounter opens with, and the floor it cannot fall through while the opening
+     * lasts (see {@link #OPENING_FLOOR_TICKS} for the other half of the buffer and for why the
+     * buffer exists at all).
+     *
+     * <p>Kept small on purpose. Starting progress is a permanent credit toward the win, so it is
+     * worth exactly as much to a bobber nobody is holding as to one being played, which makes it the
+     * most expensive way in here to buy reaction time.
      */
-    public static final float PROGRESS_START = 0.10F;
+    public static final float PROGRESS_START = 0.15F;
     /**
      * Ticks of unbroken coverage needed to fill the meter from empty, by difficulty 1..4 (3 s to
      * 4.4 s of perfect tracking, and far longer in practice since nobody tracks perfectly).
@@ -178,8 +224,30 @@ public final class MinigameTuning {
      * the sustained coverage that tracking produces.
      */
     public static final int DRAIN_GRACE_TICKS = 3;
-    /** Ticks at the start of the fight during which progress cannot drain at all. */
-    public static final int START_GRACE_TICKS = 6;
+    /**
+     * Ticks at the start of the fight during which the meter cannot fall below
+     * {@link #PROGRESS_START}. Drain still runs; it just cannot take the last of the buffer away.
+     *
+     * <p>This and {@link #PROGRESS_START} are the <b>opening buffer</b>: how long a player has to
+     * notice the overlay, find the marker and start a cadence before the fight can be lost. It is a
+     * separate thing from the steady-state balance and does not touch it. Break-even duty cycle
+     * governs a fight already in progress; this governs whether the player was ever in it. The pair
+     * shipped at 6 ticks of drain freeze and 0.10, which is 625 ms of total survival on tier 1:
+     * shorter than a human reaction to a HUD appearing, and it was unplayable on contact with a
+     * player.
+     *
+     * <p>Sized so a player who takes a <b>full second</b> to orient still has the whole fight in
+     * front of them, and doing nothing whatsoever survives about 2.8 s. Simulated players must be
+     * given an orientation delay of their own or none of this is measurable: a bot that starts
+     * tracking on tick 0 scores the same either way, which is exactly how 625 ms passed a tuning
+     * pass.
+     *
+     * <p>Buy the opening here rather than in {@link #PROGRESS_START} where possible. Measured
+     * against the camping bot, taking this from 6 to 35 cost nothing outside salmon (and about 7
+     * points there); taking {@code PROGRESS_START} from 0.10 to 0.30 instead put a parked bobber
+     * back up at 43-53% on the easy tiers. Reaction time is cheap, a head start is not.
+     */
+    public static final int OPENING_FLOOR_TICKS = 35;
 
     // --- Treasure chest ---
 
@@ -216,12 +284,13 @@ public final class MinigameTuning {
      */
     public static final int RENDER_LEAD_TICKS = 3;
 
-    public static int hookTellTicks(int difficulty) {
-        return HOOK_TELL_TICKS[clampDifficulty(difficulty) - 1];
-    }
-
-    public static int hookCommitTicks(int difficulty) {
-        return HOOK_COMMIT_TICKS[clampDifficulty(difficulty) - 1];
+    /**
+     * How long a click sets the hook, given the {@code nibble} countdown vanilla rolled for this
+     * bite. Not a number of our own: it IS vanilla's bite, so the window is open exactly while the
+     * bobber is visibly under. See the hook-set note in the class doc.
+     */
+    public static int hookWindowTicks(int nibbleTicks) {
+        return Mth.clamp(nibbleTicks, HOOK_WINDOW_MIN_TICKS, HOOK_WINDOW_MAX_TICKS);
     }
 
     public static float bobberSize(int difficulty) {

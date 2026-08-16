@@ -29,12 +29,25 @@ package com.minedew.fishing.fish;
  */
 public enum FishMovementPattern {
     /**
-     * A smooth mid-track glide. Nothing sudden ever happens, which is how it gets you. The sweep is
-     * narrow on purpose: a sine whose {@code amplitude * rate} exceeds the fish's own top speed is
-     * not a wide sweep at all, it is a fish permanently chasing a target it cannot reach, which
-     * collapses into a slow wobble around the centre.
+     * A smooth mid-track glide. Nothing sudden ever happens, which is how it gets you.
+     *
+     * <p>The sweep is bounded above by the fish's own top speed: a sine whose
+     * {@code amplitude * rate} exceeds it is not a wide sweep at all, it is a fish permanently
+     * chasing a target it cannot reach, which collapses into a slow wobble around the centre. At
+     * 0.24 and 0.050 that product is 0.012 against a top speed near 0.018, so the fish stays ahead
+     * of its own target.
+     *
+     * <p>It is bounded below by invariant 2 in {@code MinigameTuning}, which the first cut of this
+     * pattern missed. The retarget patterns are all forced to cross at least
+     * {@code FISH_MIN_JUMP} of track; a sine is not, and at an amplitude of 0.15 this one swept a
+     * 0.30 band centred on 0.50, which is narrower than a tier-1 bobber parked across the middle of
+     * it. That is invariant 2's "oozes around mid-track" failure wearing a different hat, and it
+     * measured exactly the damage the invariant predicts: salmon was the only species a parked
+     * bobber could still beat, at 18-36% where every other species sat under 9%. Widening the sweep
+     * so it carries the fish out of a parked bar took that to 7-32% and cost the glide none of its
+     * character.
      */
-    SLOW_SINUSOIDAL(0.50F, 0.15F, 0.050F, 0, 0, 0.010F, 0.00F, 0.000F, 0.00F, 0.00F, 0.00F, 1.00F),
+    SLOW_SINUSOIDAL(0.50F, 0.24F, 0.050F, 0, 0, 0.010F, 0.00F, 0.000F, 0.00F, 0.00F, 0.00F, 1.00F),
     /**
      * Sluggish and buoyant: long holds at one depth, an unhurried move to another, riding a little
      * high the whole time. Retarget-driven rather than a sine, so it is guaranteed to actually cover
