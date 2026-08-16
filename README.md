@@ -81,13 +81,6 @@ big fish cut up, which is what actually happened. Vanilla clients see the ordina
 - Leaving the rod alone will not land you a fish, and neither will an autoclicker. Both were measured
 - Difficulty stars tell you how big it is before you commit. The species you have to read
 
-## Requirements
-
-- Targets the Minecraft, Fabric Loader, and Fabric API versions declared in this mod's
-  `gradle.properties`; check there for the exact currently-supported version
-- Java version as declared in `fabric.mod.json`'s `depends` block
-- Pandorical (required, see below)
-
 ## Pandorical
 
 Minedew Fishing is server-authoritative and entirely server-side. The whole state machine (hook-set
@@ -108,8 +101,7 @@ for that player. There is no fallback minigame or reduced-feature mode.
 
 ## Installation
 
-Install server-side alongside its declared dependencies (see `fabric.mod.json`). Connecting clients
-need only Pandorical.
+Install server-side alongside its declared dependencies (see `fabric.mod.json`); connecting clients need only Pandorical. Version targets live in `gradle.properties` (Minecraft, loader, Fabric API) and `fabric.mod.json` (Java).
 
 ## Development
 
@@ -117,7 +109,7 @@ Architecture, the bestiary, tuning invariants, and testing: see [DEVELOPMENT.md]
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT, see [LICENSE](LICENSE).
 
 ## Credits
 
