@@ -2,14 +2,15 @@ package com.minedew.fishing.mixin;
 
 import com.minedew.fishing.access.MinedewFishingHookAccess;
 import com.minedew.fishing.encounter.FishingEncounterManager;
-import com.minedew.fishing.fish.FishType;
-import net.minecraft.core.BlockPos;
+import com.minedew.fishing.fish.HookedCatch;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.FishingHook;
+import net.minecraft.world.item.FishingRodItem;
+import net.minecraft.world.item.ItemStack;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -20,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 /**
  * Server-authoritative bite detection and encounter lifecycle glue for {@link FishingHook}.
  * Uses vanilla's own {@code nibble} countdown (the same signal that gates vanilla's catch roll in
- * {@code retrieve()}) as the authoritative "a fish is biting" event, rather than guessing from
+ * {@code retrieve()}) as the authoritative "something is biting" event, rather than guessing from
  * bobber physics.
  */
 @Mixin(FishingHook.class)
@@ -28,12 +29,16 @@ public abstract class FishingHookMixin implements MinedewFishingHookAccess {
     @Shadow
     private int nibble;
 
+    @Shadow
+    @Final
+    private int luck;
+
     @Unique
     private int minedew$lastNibble = 0;
 
     @Override
-    public void minedew$forceNibble() {
-        this.nibble = 1;
+    public int minedew$luck() {
+        return this.luck;
     }
 
     @Inject(method = "tick", at = @At("TAIL"))
@@ -50,14 +55,20 @@ public abstract class FishingHookMixin implements MinedewFishingHookAccess {
         if (!risingEdge) return;
         if (FishingEncounterManager.isPlayerInEncounter(serverPlayer.getUUID())) return;
 
-        ServerLevel world = (ServerLevel) self.level();
-        BlockPos pos = self.blockPosition();
-        boolean isRaining = world.isRaining();
-        int timeOfDay = (int) (world.getOverworldClockTime() % 24000L);
-        RandomSource random = RandomSource.create();
-        FishType fishType = FishType.getRandomFish(world.getBiome(pos), isRaining, timeOfDay, random);
+        ItemStack rod = minedew$rodStack(serverPlayer);
+        if (rod == null) return;
 
-        FishingEncounterManager.startEncounter(serverPlayer, self, fishType);
+        // Roll vanilla's own fishing table now, so the fight's identity and the eventual payout are
+        // the same thing rather than two independent rolls that can disagree
+        HookedCatch hooked = HookedCatch.roll((ServerLevel) self.level(), serverPlayer, self, rod);
+        FishingEncounterManager.startEncounter(serverPlayer, self, hooked);
+    }
+
+    @Unique
+    private static ItemStack minedew$rodStack(ServerPlayer player) {
+        if (player.getMainHandItem().getItem() instanceof FishingRodItem) return player.getMainHandItem();
+        if (player.getOffhandItem().getItem() instanceof FishingRodItem) return player.getOffhandItem();
+        return null;
     }
 
     @Inject(method = "remove", at = @At("HEAD"))

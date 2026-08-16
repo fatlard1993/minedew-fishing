@@ -16,88 +16,186 @@ cd minedew-fishing
 
 ## Architecture
 
-The minigame is **server-authoritative**: `FishingEncounterManager` on the server owns the entire state machine (phase timing, hit/miss/feint/treasure resolution, misses, timeout). The client never simulates game logic; it renders what the server declares (via Pandorical HUD) and predicts its own click locally for instant sound feedback before the authoritative result arrives.
+The minigame is **server-authoritative and entirely server-side**. `FishingEncounterManager` owns
+every live encounter and drives it from the server tick; the client runs no game logic at all. There
+is no client entrypoint, no client jar, and no custom packet in either direction.
 
-If a connecting player has no Pandorical client, `startEncounter` deliberately does nothing and the hook is left entirely to vanilla fishing. There is no fallback minigame.
+- **Input** is the ordinary vanilla rod right-click, observed server-side in `FishingRodItemMixin`.
+  During the hook set it is the commit; during the fight it queues one upward impulse.
+- **Output** is a declarative Pandorical HUD push. The client only interpolates between the values
+  the server sends.
+
+If a connecting player has no Pandorical client, `startEncounter` deliberately does nothing and the
+hook is left entirely to vanilla fishing. There is no fallback minigame.
 
 ### Component Map
 
 **Initialization**
-- `MinedewFishing` (common): registers network payload types, the `FishingClickC2S` receiver (delegates to `FishingEncounterManager.handleClick`), and the server tick hook
-- `MinedewFishingClient`: thin; registers receivers for the three S2C payloads and forwards them to `ClientEncounterState`, no rendering of its own
+- `MinedewFishing`: registers the server tick hook, the fillet `overrideVanillaItem` reskins, and
+  the mod's asset bundle. That is the whole entrypoint.
 
 **Fish** (`fish/`)
-- `FishType`: 13 species across 4 difficulty tiers; difficulty (1-4) drives round count, window lengths, and feint eligibility. `getRandomFish(biome, isRaining, timeOfDay, random)` selects by biome tag (ocean/river/deep ocean/other), rain (unlocks a legendary in ocean/river), and time of day (Glacierfish at night in deep ocean)
-- `FishMovementPattern`: vestigial enum tag on each `FishType`; not read anywhere, no behavioral effect
+- `FishSpecies`: the five movement identities. Not rolled with invented odds: `HookedCatch` rolls
+  vanilla's own `minecraft:gameplay/fishing` table and reads the identity back off the result
+- `FishSize`: `SMALL`/`MEDIUM`/`LARGE`/`TROPHY`, rolled per bite. This is where difficulty comes
+  from; it also sets the size bonus payout
+- `FishMovementPattern`: the per-pattern motion knobs (retarget interval, pull, burst, jitter,
+  settle damping, target bias). Data only
+- `FishMotion`: runs one fight's motion at 20 Hz off those knobs, layering primary pattern, species
+  accent, and the size class's thrash
+- `HookedCatch`: one resolved bite (species, size, and the exact loot that will be handed over)
 
 **Encounter** (`encounter/`)
-- `FishingEncounterManager`: the state machine and single source of truth; starts/aborts encounters, ticks phase timers, resolves clicks server-side using the client's self-reported elapsed time for latency tolerance, applies outcomes, and pushes all HUD updates
-- `FishingEncounter`: per-player state for one in-progress encounter (phase, round/miss counters, timing, feint/treasure flags); server-only
+- `FishingEncounterManager`: lifecycle, tick loop, click dispatch, outcome resolution, payout
+- `FishingEncounter`: per-player state for one encounter, and the hook-set and fight step functions
+- `MinigameTuning`: every feel knob, plus the invariants that constrain them
 
-**Client prediction** (`client/ClientEncounterState.java`)
-- A plain data holder (no `net.minecraft.client.*` imports) mirroring the most recently server-declared phase, so a click can be judged locally for optimistic sound feedback; the server is always final
-
-**Network** (`network/`)
-- `FishingPhaseS2C`: phase transition (`tell`/`commit`), duration, feint flag
-- `FishingClickResultS2C`: per-round hit/miss outcome
-- `FishingEncounterEndS2C`: encounter finished (caught/escaped, treasure secured or not)
-- `FishingClickC2S`: the one thing the client sends: "I clicked, and here's how long I believe it's been since the phase began"
+**HUD** (`hud/`)
+- `HookSetHud`: the hook-set ring and prompt
+- `MinigameHud`: the fight overlay (track, marker, bobber, catch gauge, treasure chest and its ring)
 
 **Mixins** (`mixin/`)
-- `FishingHookMixin`: bite detection off vanilla's own `nibble` countdown on `FishingHook` (the same signal vanilla uses to gate its catch roll), not a bobber-physics heuristic; starts/aborts encounters with the hook's lifecycle
-- `FishingRodItemMixin` (both sides): cancels the vanilla rod-reel interaction while an encounter owns the cast, so a stray right-click can't bypass the minigame into an immediate vanilla catch
-- `FishingRodItemClientMixin` (client only): optimistic local click feedback, sends `FishingClickC2S`
+- `FishingHookMixin`: bite detection off vanilla's own `nibble` countdown (the same signal vanilla
+  uses to gate its catch roll), not a bobber-physics heuristic; starts and aborts encounters with the
+  hook's lifecycle
+- `FishingRodItemMixin`: observes the rod use as minigame input, then cancels it so vanilla's
+  `retrieve()` cannot end the cast with an immediate real catch
 
 **Access** (`access/MinedewFishingHookAccess.java`)
-- Implemented by the hook mixin; lets `FishingEncounterManager` force the hook's nibble state to 1 on success so vanilla's own `retrieve()` completes the catch (loot table, Luck of the Sea/Lure all run as normal)
+- Duck interface implemented by the hook mixin, exposing the hook's private Luck of the Sea value so
+  the mod's own loot roll matches the roll vanilla would have made. Lives outside the `mixin`
+  package on purpose: Sponge Mixin rejects non-mixin classes in a package a mixin config claims
 
 ## Mechanics Reference
 
-Each round: **TELL** (colored ring telegraphs; clicking is a miss) → **COMMIT** (prompt flips to "CLICK!"; a click is a hit unless the round is a feint) → **GRACE** (~300ms of tolerance before the round scores as an automatic miss, or on a feint, a successful "read").
+An encounter is two stages.
 
-- Window durations scale with difficulty: tell 0.50s (diff 1) down to 0.35s (diff 4); commit 0.80s down to 0.45s
-- A full encounter needs `difficulty + 1` successful rounds (2-5), tolerates 2 misses, and has a 20-second overall timeout
-- Feints: difficulty-4 fish only, ~30% chance per eligible round, never on the treasure round; must be waited out without clicking
-- Treasure: each encounter independently has a 15-25% chance to designate one round (chosen up front) as a treasure round; landing it on top of a successful catch grants a bonus item (common materials up to a diamond)
-- Success forces the hook's nibble state and calls vanilla `retrieve()`; failure (3rd miss or timeout) discards the hook and plays a break sound
+**Hook set.** One telegraphed timing window: `TELL` (a ring winds up; clicking now loses the bite),
+`COMMIT` (click), then `GRACE`, a few ticks of network slack after the window visually closes.
+Letting it lapse loses the bite too. Tell and commit lengths shorten with difficulty.
 
-## HUD
+**Fight.** The bar game. The marker swims under its species' pattern; the player taps the rod to keep
+a bobber bar under it (one click, one upward impulse, gravity between clicks, one impulse per tick
+maximum); the catch meter fills while the two overlap and drains while they do not. Full is a catch,
+empty is an escape, and there is a 45 s timeout as a safety net.
 
-The overlay is a single Pandorical HUD (`minedew-fishing:encounter`) anchored above the reticle: a `particle_burst` ring whose color/speed/radius track phase and round type (blue tell → green commit; gold treasure; purple feint), a flash sprite tinting on each outcome (green hit, red miss, white read), text components for fish name, difficulty stars, prompt, and progress pips, and an optional "treasure on the line" hint. All of it is declarative component updates pushed from the server.
+A fight may also carry a **treasure chest**, which surfaces at a fixed spot partway in and has its
+own meter that only fills while the bobber covers it. Time spent on the chest is time not spent on
+the fish. It is only kept if the fish is also landed.
 
-## Where to Edit
+The species name is never shown during the fight; only the difficulty stars are. It is revealed on
+the catch.
 
-**Adding a fish**: `fish/FishType.java`; add an enum entry with display name and difficulty, then wire it into the biome/weather/time selection logic in the same file.
+## Bestiary
 
-**Tuning pacing**: the tables at the top of `FishingEncounterManager.java`:
+Five identities, exactly matching what vanilla fishing hands you. Species decides how a fight
+**feels**; size decides how **hard** it is. The two are deliberately separate axes, and the species
+speed/aggression multipliers are kept narrow so a species never becomes a difficulty tier in
+disguise.
 
-```java
-private static final int[] TELL_TICKS = {10, 9, 8, 7};       // difficulty 1..4
-private static final int[] COMMIT_TICKS = {16, 14, 12, 9};   // difficulty 1..4
-private static final int MAX_MISSES = 2;
-private static final int OVERALL_TIMEOUT_TICKS = 400; // 20s safety net
-private static final float FEINT_CHANCE = 0.30F;
-```
+| Species | Pattern | Signature | What it feels like |
+|---|---|---|---|
+| **Cod** | `MODERATE_DART` | Retargets every 22-45 ticks, moderate burst, settles hard | The baseline. Moves to a new depth, sits there, moves again. If you can read anything, you can read cod |
+| **Salmon** | `FAST_DART` + `SLOW_SINUSOIDAL` accent | Retargets every 20-40 ticks with the biggest burst of any fish; every ~6 s it drops into a narrow mid-track glide for ~2 s | Runs and glides. Hard lunges, then a stretch where it is suddenly easy while it recovers |
+| **Tropical Fish** | `FAST_ERRATIC` | Retargets every 18-34 ticks, shortest hold of any fish, faint per-tick tremor | Skittish. Never settles for long, and never quite sits still even when it does |
+| **Pufferfish** | `SLOW_FLOATER` | Retargets every 26-46 ticks, longest holds, rides slightly high | Sluggish and buoyant. Long dead holds and unhurried moves, but it makes you work up-track |
+| **Junk** | `SNAG` | Retargets every 22-45 ticks with an extreme settle damping and a low bias | Not a fish. Dead pauses, a sudden short lurch, a dead stop, dragging low. A second of this and you know you have hooked garbage |
 
-These are deliberately generous (a genre shift from twitch bar-tracking to "read the tell, commit in the window") and not extensively playtested at every tier; tune here if it plays too easy or too hard.
+Junk has no size variants and always fights at tier 1, with a faster-filling meter, so a boot is
+quick and annoying rather than hard.
 
-**Customizing the HUD**: `showHud` / `updateHudForPhase` / `flash` in `FishingEncounterManager.java`, built with Pandorical's `HudBuilder` / `ComponentBuilder` API.
+### Size tiers
+
+| Size | Tier | Bobber | Fill time | Break-even duty | Thrash | Bonus pieces |
+|---|---|---|---|---|---|---|
+| Small | ★ | 0.200 | 60 ticks | 48% | none | 0 |
+| Medium | ★★ | 0.185 | 72 ticks | 48% | none | 1 |
+| Large | ★★★ | 0.170 | 84 ticks | 49% | 16 ticks every 170 | 2 |
+| Trophy | ★★★★ | 0.165 | 88 ticks | 49% | 20 ticks every 190 | 4 |
+
+Size is rolled per bite, weighted 50/30/15/5, with rain, deep water and night all pushing toward the
+bigger classes. `TROPHY_THRASH` is layered over the species' own pattern for the two big classes: a
+big one announces itself no matter what species it is.
+
+## Tuning
+
+All numbers live in `MinigameTuning`. Read its class doc before changing any of them: it states the
+three invariants that hold the game together, and each one has been broken during tuning and
+measured doing damage.
+
+Briefly:
+
+1. **The fish must not outrun the bobber**, where the bound is the bobber's *sustained climb rate*
+   `D/(1-D) * (CLICK_IMPULSE*r/20 - BOBBER_GRAVITY)`, not `BOBBER_TERMINAL_SPEED` (clicking never
+   reaches that).
+2. **The fish must actually traverse the track.** A fish too slow to cover `FISH_MIN_JUMP` within
+   its retarget interval drifts around mid-track, which is exactly what a parked bobber covers.
+   Slow fish are not easy fish, they are free fish.
+3. **The meter's break-even duty cycle `drain / (gain + drain)` must sit in roughly 46-52%.** Below
+   it a parked bobber wins on its own; above it not even perfect tracking sustains it.
+
+### Where to edit
+
+**Fish feel**: `FishMovementPattern` (per-pattern knobs) and `FishSpecies` (which pattern, and the
+narrow speed/aggression multipliers).
+
+**Difficulty**: `MinigameTuning`'s `BOBBER_SIZE_BY_DIFFICULTY`, `CATCH_TICKS_BY_DIFFICULTY` and
+`PROGRESS_DRAIN_BY_DIFFICULTY`, plus `FishSize`'s thrash timings. The bobber height is the strongest
+lever and also the most dangerous, because the bar's height is how much of the track a player who
+stops playing covers for free.
+
+**Pacing of the hook set**: `HOOK_TELL_TICKS`, `HOOK_COMMIT_TICKS`, `HOOK_GRACE_TICKS`.
+
+**HUD**: `hud/MinigameHud.java` and `hud/HookSetHud.java`. Pixel geometry there mirrors
+`generate_textures.py`, which draws each texture at exactly the size it is blitted at; change both
+together.
 
 ## Testing
 
-`./gradlew runClient`, single-player world with Pandorical installed client-side, `/give @s fishing_rod`, find water, cast.
+### Headless difficulty simulation
 
-Debug logging: `MinedewFishing.LOGGER.info(...)`.
+Difficulty is tuned against a simulation, not by eye. The harness drives the real `FishingEncounter`
+/ `FishMotion` / `MinigameTuning` classes (constructed with a null player, which those classes never
+touch) with scripted players, so what it measures is what ships.
 
-**Mixin not applying**: check `src/main/resources/minedew-fishing.mixins.json`, package placement, and that method signatures still match the current target class (`javap` the remapped Minecraft jar if in doubt); then `./gradlew clean build`.
+It needs three things to be worth anything:
 
-**No minigame appears**: confirm Pandorical is loaded on the connecting client; without it the encounter never starts.
+- **A cadence-modulating controller, not a bang-bang one.** The game asks the player to modulate tap
+  rate; a bot that clicks every tick it is below the fish oscillates, and will score the slow bots
+  above the fast ones.
+- **A parking bot.** Sweep a fixed bobber height and report the best result. A tracking bot alone
+  cannot tell you the game is winnable without playing it, and that is the failure mode this design
+  is most prone to.
+- **Latency and fumbles as the skill axis**, since a server-authoritative minigame lives or dies on
+  how it degrades over a round trip.
+
+Rebuild classes and run against the Loom-resolved runtime classpath; `Bootstrap.bootStrap()` is
+needed before touching `FishSpecies`, because its constants reference `Items`.
+
+### In game
+
+`./gradlew runClient`, single-player world with Pandorical installed client-side, `/give @s
+fishing_rod`, find water, cast.
+
+Debug logging: `MinedewFishing.LOGGER`.
+
+**Mixin not applying**: check `src/main/resources/minedew-fishing.mixins.json`, package placement,
+and that method signatures still match the current target class (`javap` the remapped Minecraft jar
+if in doubt); then `./gradlew clean build`.
+
+**No minigame appears**: confirm Pandorical is loaded on the connecting client; without it the
+encounter never starts.
 
 ## Known Limitations
 
 - No fallback experience for players without Pandorical (intentional)
-- `FishMovementPattern` is vestigial, no behavioral effect
-- Pacing constants are generous and unverified by extensive playtesting
+- The difficulty numbers come from scripted players. They bound the game (a parking bot cannot win,
+  a laggy player can still play) but they cannot tell you whether it *feels* good, whether the
+  motion is legible on screen, or whether the tap cadence is comfortable on a real hand
+- The simulated treasure-chest cost is a worst case: the bot abandons the fish the instant the chest
+  surfaces, where a player can wait until the fish is already near it
+- A bobber parked at mid-track still lands a minority of the easiest fish (measured up to 36% on
+  small salmon). Driving that to zero costs more in fairness to real players than it is worth
 
 ## License
 
