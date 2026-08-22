@@ -1,0 +1,21 @@
+{
+  "parent": "minedew-fishing:big_one",
+  "display": {
+    "icon": {
+      "id": "minecraft:fishing_rod"
+    },
+    "title": "Trophy Catch",
+    "description": "Land a trophy fish. They run deep, and they bite in the rain and the dark",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "frame": "goal"
+  },
+  "criteria": {
+    "landed": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "min_difficulty": 4
+      }
+    }
+  }
+}

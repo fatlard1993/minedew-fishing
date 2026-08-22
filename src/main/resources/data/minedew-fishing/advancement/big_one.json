@@ -1,0 +1,20 @@
+{
+  "parent": "minecraft:husbandry/fishy_business",
+  "display": {
+    "icon": {
+      "id": "minecraft:salmon"
+    },
+    "title": "The Big One",
+    "description": "Land a large fish - it fights back, and the rod is only half of it",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "landed": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "min_difficulty": 3
+      }
+    }
+  }
+}

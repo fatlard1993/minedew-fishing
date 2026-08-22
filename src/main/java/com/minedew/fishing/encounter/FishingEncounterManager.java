@@ -226,6 +226,11 @@ public final class FishingEncounterManager {
         grantCatch(encounter, level, player, hook, hand);
         if (encounter.treasureSecured) grantTreasure(player, level);
 
+        // Junk has a size on paper only - it is always SMALL - so landing a boot is not a catch.
+        if (!encounter.hooked.species().isJunk()) {
+            MinedewFishing.FISH_LANDED.trigger(player, encounter.hooked.size());
+        }
+
         if (hook != null && !hook.isRemoved()) hook.discard();
         playSound(player, SoundEvents.PLAYER_LEVELUP, 0.5F, 1.6F);
         MinigameHud.hide(player);

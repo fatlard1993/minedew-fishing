@@ -18,6 +18,13 @@ public class MinedewFishing implements ModInitializer {
     public static final String MOD_ID = "minedew-fishing";
     public static final Logger LOGGER = LoggerFactory.getLogger("minedew-fishing");
 
+    /** Fired when a fight is won; see {@link com.minedew.fishing.advancement.FishLandedCriterion}. */
+    public static final com.minedew.fishing.advancement.FishLandedCriterion FISH_LANDED =
+        net.minecraft.core.Registry.register(
+            net.minecraft.core.registries.BuiltInRegistries.TRIGGER_TYPES,
+            net.minecraft.resources.Identifier.fromNamespaceAndPath(MOD_ID, "fish_landed"),
+            new com.minedew.fishing.advancement.FishLandedCriterion());
+
     /**
      * Raw and cooked cod and salmon, reskinned as fillets for Pandorical clients.
      *
@@ -44,6 +51,12 @@ public class MinedewFishing implements ModInitializer {
         }
         // Also carries the minigame's own GUI art to clients
         PandoricalApi.content().registerModAssets(MOD_ID);
+
+        // Isolated in its own class and only reached from here: it refers to
+        // Village Quests types directly, so it must not load without that mod.
+        if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("village-quests-justfatlard")) {
+            com.minedew.fishing.integration.VillageQuestsLessons.register();
+        }
 
         LOGGER.info("[minedew-fishing] Initialized - server-authoritative fishing minigame ready");
     }
