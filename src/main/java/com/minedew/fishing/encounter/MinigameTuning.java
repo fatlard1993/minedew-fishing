@@ -43,8 +43,8 @@ import net.minecraft.util.Mth;
  *       tapping at {@code r} clicks/second is
  *       {@code D/(1-D) * (CLICK_IMPULSE*r/20 - BOBBER_GRAVITY)}, and free fall is
  *       {@code D/(1-D) * BOBBER_GRAVITY}, so the real ceiling on the fastest fish is the sustained
- *       CLIMB rate of a player tapping at a realistic rate. At these values that is about 0.028
- *       climbing and 0.024 falling, against a fastest fish of 0.020.</li>
+ *       CLIMB rate of a player tapping at a realistic rate. At these values that is about 0.042
+ *       climbing and 0.036 falling, against a fastest fish of 0.020.</li>
  *   <li><b>The fish must actually traverse the track.</b> A fish whose top speed cannot cover
  *       {@link #FISH_MIN_JUMP} within its pattern's retarget interval never arrives anywhere: it
  *       oozes around mid-track, and mid-track is exactly what a parked bobber covers. Slow fish are
@@ -68,6 +68,22 @@ import net.minecraft.util.Mth;
  *   tier 3: good 24-46%   parked  0-10%    demands attention
  *   tier 4: good  8-31%   parked  0-7%     a real skill check, losable
  * </pre>
+ *
+ * <p><b>The table above is from the original harness, which was not kept.</b> The numbers below
+ * come from a rebuilt one and are NOT comparable to it in absolute terms: its bot is a plainer
+ * tracker and scores far lower everywhere, so read these as before-and-after of one instrument
+ * rather than as catch rates a person would see. Averaged across the four species:
+ *
+ * <pre>
+ *              tier 1  tier 2  tier 3  tier 4
+ *   good        31%     19%     17%      6%   (was 15/7/7/3 before this pass)
+ *   sloppy       8%      3%      2%      0%   (was  4/1/1/0)
+ *   parked      10%      0%      1%      0%   (was  5/0/1/0)
+ * </pre>
+ *
+ * <p>That rebuild independently found the drain wall this file already warned about: taking the
+ * break-even duty cycle from 48% to 46% put the parking bot on tier 1 from 9% to 23%. The drain
+ * numbers below were left alone because of it.
  *
  * The spread within a row is across the four species; the parked column is the number that matters
  * most, because an earlier set of these constants let a bobber left alone land 90-100% of the two
@@ -109,16 +125,16 @@ public final class MinigameTuning {
     // --- Bobber physics (the three primary feel knobs, plus their shaping) ---
 
     /** Upward velocity added by one accepted click. See the class doc for the cadence formula. */
-    public static final float CLICK_IMPULSE = 0.0210F;
+    public static final float CLICK_IMPULSE = 0.0315F;
     /** Downward acceleration applied every tick. */
-    public static final float BOBBER_GRAVITY = 0.0021F;
+    public static final float BOBBER_GRAVITY = 0.00315F;
     /**
      * Hard cap in both directions. This is a safety rail, not the thing that limits normal play:
      * damping means ordinary clicking settles at a lower sustained speed (see invariant 1 in the
      * class doc). It binds only on a sustained mash, which is what stops an autoclicker from
      * slamming the bobber to the ceiling faster than the fish can be followed.
      */
-    public static final float BOBBER_TERMINAL_SPEED = 0.028F;
+    public static final float BOBBER_TERMINAL_SPEED = 0.042F;
     /** Velocity retained each tick; the bobber coasts rather than stopping dead. */
     public static final float BOBBER_DAMPING = 0.92F;
     /**
@@ -127,7 +143,7 @@ public final class MinigameTuning {
      * second of not clicking), so ordinary play is pure "impulse plus gravity", but a missed beat
      * stays recoverable instead of turning into a death spiral.
      */
-    public static final float CLICK_FALL_ARREST = 0.018F;
+    public static final float CLICK_FALL_ARREST = 0.027F;
     /** Fraction of velocity kept, reversed, when the bobber hits the top or bottom of the track. */
     public static final float BOBBER_BOUNCE = 0.25F;
     /**
@@ -161,8 +177,8 @@ public final class MinigameTuning {
 
     /**
      * Fish speed cap before the species (0.98x to 1.03x) and size (1.00x to 1.05x) scale it, so the
-     * fastest combination tops out near 0.020 against a sustained bobber climb of about 0.028 and a
-     * fall of about 0.024. A fish that can outrun the bobber is not difficult, it is unfair; a fish
+     * fastest combination tops out near 0.020 against a sustained bobber climb of about 0.042 and a
+     * fall of about 0.036. A fish that can outrun the bobber is not difficult, it is unfair; a fish
      * too slow to cross the track is not easy, it is free. See invariants 1 and 2 in the class doc.
      */
     public static final float FISH_BASE_MAX_SPEED = 0.018F;
@@ -237,7 +253,7 @@ public final class MinigameTuning {
      * player.
      *
      * <p>Sized so a player who takes a <b>full second</b> to orient still has the whole fight in
-     * front of them, and doing nothing whatsoever survives about 2.8 s. Simulated players must be
+     * front of them, and doing nothing whatsoever survives about 4.5 s. Simulated players must be
      * given an orientation delay of their own or none of this is measurable: a bot that starts
      * tracking on tick 0 scores the same either way, which is exactly how 625 ms passed a tuning
      * pass.
@@ -247,7 +263,7 @@ public final class MinigameTuning {
      * points there); taking {@code PROGRESS_START} from 0.10 to 0.30 instead put a parked bobber
      * back up at 43-53% on the easy tiers. Reaction time is cheap, a head start is not.
      */
-    public static final int OPENING_FLOOR_TICKS = 35;
+    public static final int OPENING_FLOOR_TICKS = 80;
 
     // --- Treasure chest ---
 
