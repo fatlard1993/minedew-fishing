@@ -4,17 +4,17 @@ from dataclasses import dataclass
 
 # ---- tuning (mirrors MinigameTuning) ----
 T = dict(
-    CLICK_IMPULSE=0.0210, BOBBER_GRAVITY=0.0021, BOBBER_TERMINAL=0.028,
-    BOBBER_DAMPING=0.92, CLICK_FALL_ARREST=0.018, BOBBER_BOUNCE=0.25,
-    BOBBER_HOLD=40,
+    CLICK_IMPULSE=0.0315, BOBBER_GRAVITY=0.00315, BOBBER_TERMINAL=0.042,
+    BOBBER_DAMPING=0.92, CLICK_FALL_ARREST=0.027, BOBBER_BOUNCE=0.25,
+    FALL_GRAVITY_MULT=2.0,
     BOBBER_SIZE=[0.20, 0.185, 0.17, 0.165],
-    FISH_BASE_MAX_SPEED=0.018, FISH_DAMPING=0.94,
+    FISH_BASE_MAX_SPEED=0.018, FISH_DAMPING=0.94, FISH_DIVE_FACTOR=1.0,
     FISH_MIN_POS=0.10, FISH_MAX_POS=0.90, FISH_MIN_JUMP=0.30,
     FISH_ERRATIC=[0.70, 0.85, 0.95, 1.05],
     PROGRESS_START=0.15,
-    CATCH_TICKS=[60, 72, 84, 88], JUNK_CATCH_TICKS=55,
-    DRAIN=[0.0154, 0.0128, 0.0114, 0.0109],
-    DRAIN_GRACE=3, OPENING_FLOOR=35, FIGHT_TIMEOUT=900,
+    CATCH_TICKS=[75, 92, 110, 120], JUNK_CATCH_TICKS=65,
+    DRAIN=[0.01231, 0.01003, 0.00873, 0.00833],
+    DRAIN_GRACE=3, OPENING_FLOOR=80, FIGHT_TIMEOUT=900,
 )
 
 @dataclass(frozen=True)
@@ -119,7 +119,7 @@ class Fish:
         if p.settleDamping < 1 and abs(gap) < SETTLE_RADIUS:
             self.vel *= p.settleDamping
         self.vel *= T["FISH_DAMPING"]
-        self.vel = max(-self.maxSpeed, min(self.maxSpeed, self.vel))
+        self.vel = max(-self.maxSpeed * T["FISH_DIVE_FACTOR"], min(self.maxSpeed, self.vel))
         self.pos += self.vel
         if self.pos < T["FISH_MIN_POS"]:
             self.pos = T["FISH_MIN_POS"]; self.vel = abs(self.vel) * 0.4
@@ -135,7 +135,6 @@ class Fight:
         self.size = T["BOBBER_SIZE"][diff-1]
         self.pos = 0.5 - self.size / 2
         self.vel = 0.0
-        self.held = T["BOBBER_HOLD"]
         self.progress = T["PROGRESS_START"]
         self.gain = 1.0 / (T["JUNK_CATCH_TICKS"] if junk else T["CATCH_TICKS"][diff-1])
         self.drain = T["DRAIN"][diff-1]
@@ -146,18 +145,16 @@ class Fight:
     def covers(self, p): return self.pos <= p <= self.pos + self.size
 
     def step(self, click):
-        if self.held > 0 and not click:
-            self.held -= 1
-            self.fish.step()
-            self.inside = self.covers(self.fish.pos)
-            return
-        self.held = 0
         self.ticks += 1
         self.fish.step()
         # bobber
         if click:
             self.vel = max(self.vel, -T["CLICK_FALL_ARREST"]) + T["CLICK_IMPULSE"]
-        self.vel -= T["BOBBER_GRAVITY"]
+        # "The fish pulls the line": gravity is boosted only while the fish is below the
+        # bobber's bottom edge, so hover cadence over the fish is untouched and a dive drags
+        # the bar down after it
+        boosted = self.fish.pos < self.pos
+        self.vel -= T["BOBBER_GRAVITY"] * (T["FALL_GRAVITY_MULT"] if boosted else 1.0)
         self.vel *= T["BOBBER_DAMPING"]
         self.vel = max(-T["BOBBER_TERMINAL"], min(T["BOBBER_TERMINAL"], self.vel))
         self.pos += self.vel
@@ -207,11 +204,14 @@ def play(sp, sz, prof, rng, junk=False, park=False):
     while True:
         hist.append(f.fish.pos)
         click = False
+        M = T["FALL_GRAVITY_MULT"]
         if park:
             want = 0.5 - f.size / 2
             err = want - f.pos
-            vstar = max(-D / (1 - D) * G, min(T["BOBBER_TERMINAL"], K * err))
-            r = 20.0 * (vstar * (1 - D) / D + G) / I
+            lo = -min(T["BOBBER_TERMINAL"], D / (1 - D) * G * M)
+            vstar = max(lo, min(T["BOBBER_TERMINAL"], K * err))
+            geff = G * M if f.fish.pos < f.pos else G
+            r = 20.0 * (vstar * (1 - D) / D + geff) / I
             credit += max(0.0, min(prof.cps if prof else 20.0, r)) / 20.0
             if credit >= 1.0:
                 credit -= 1.0; click = True
@@ -221,10 +221,11 @@ def play(sp, sz, prof, rng, junk=False, park=False):
             fishvel = seen - hist[i - 1] if i >= 1 else 0.0
             want = seen - f.size / 2
             err = want - f.pos
-            lo = -D / (1 - D) * G
+            lo = -min(T["BOBBER_TERMINAL"], D / (1 - D) * G * M)
             hi = min(T["BOBBER_TERMINAL"], D / (1 - D) * (I * prof.cps / 20.0 - G))
             vstar = max(lo, min(hi, K * err + fishvel))
-            r = 20.0 * (vstar * (1 - D) / D + G) / I
+            geff = G * M if seen < f.pos else G
+            r = 20.0 * (vstar * (1 - D) / D + geff) / I
             credit += max(0.0, min(prof.cps, r)) / 20.0
             if credit >= 1.0:
                 credit -= 1.0

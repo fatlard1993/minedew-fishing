@@ -32,7 +32,9 @@ import net.minecraft.util.Mth;
  * which is the tapping rate that holds the bobber level: about 2 clicks/second at the values below.
  * Tap faster and you climb, ease off and you sink, and the response in between is smooth and linear
  * in cadence rather than an on/off cliff. Raise {@code CLICK_IMPULSE} to make the game ask for
- * lazier tapping, raise {@code BOBBER_GRAVITY} to make it ask for faster tapping.
+ * lazier tapping, raise {@code BOBBER_GRAVITY} to make it ask for faster tapping. The one carve-out
+ * is {@link #FISH_PULL_GRAVITY_MULT}, which multiplies gravity only while the fish is below the
+ * bar, so a release chases a dive at full speed without any of these hover numbers moving.
  *
  * <p><b>Three invariants hold this together.</b> Breaking any of them produces a game that looks
  * fine in the constants and fails in play, which is exactly what the first cut of these numbers did:
@@ -44,7 +46,11 @@ import net.minecraft.util.Mth;
  *       {@code D/(1-D) * (CLICK_IMPULSE*r/20 - BOBBER_GRAVITY)}, and free fall is
  *       {@code D/(1-D) * BOBBER_GRAVITY}, so the real ceiling on the fastest fish is the sustained
  *       CLIMB rate of a player tapping at a realistic rate. At these values that is about 0.042
- *       climbing and 0.036 falling, against a fastest fish of 0.020.</li>
+ *       climbing, against a fastest fish of 0.020; falling toward a fish below the bar runs at the
+ *       terminal 0.042 itself, because {@link #FISH_PULL_GRAVITY_MULT} pushes the free-fall rate
+ *       past the cap. Steady speeds are only half of this invariant, though: the fall takes
+ *       {@code 1/(1-D)} ticks to build while a burst is instant, and that transient is exactly what
+ *       the fish-pull multiplier exists to cover (see its own doc).</li>
  *   <li><b>The fish must actually traverse the track.</b> A fish whose top speed cannot cover
  *       {@link #FISH_MIN_JUMP} within its pattern's retarget interval never arrives anywhere: it
  *       oozes around mid-track, and mid-track is exactly what a parked bobber covers. Slow fish are
@@ -84,6 +90,29 @@ import net.minecraft.util.Mth;
  * <p>That rebuild independently found the drain wall this file already warned about: taking the
  * break-even duty cycle from 48% to 46% put the parking bot on tier 1 from 9% to 23%. The drain
  * numbers below were left alone because of it.
+ *
+ * <p><b>The fish-pull pass</b> answered a playtest report: the bar could not follow a fish down,
+ * and the meter read as too fast. It re-synced the harness to these constants first (it had
+ * drifted to a pre-scale-up copy of the physics, so nothing shipped had actually been measured),
+ * then added {@link #FISH_PULL_GRAVITY_MULT} and lengthened the fills, with drains re-derived at
+ * the same break-evens. Same rebuilt instrument, 2500 fights per species and tier:
+ *
+ * <pre>
+ *              tier 1  tier 2  tier 3  tier 4
+ *   good        68%     55%     52%     30%   (was 39/23/20/10 at the shipped constants)
+ *   sloppy      26%     11%      8%      2%   (was 11/ 4/ 3/ 1)
+ *   parked       8%      1%      0%      0%   (was  5/ 0/ 1/ 0)
+ * </pre>
+ *
+ * The across-the-board lift is the point, not a side effect: being unable to chase a dive was a
+ * mobility tax every profile paid, and the longer fills convert the regained mobility into a skill
+ * gradient instead of free catches — the parking bot's whole gain is 5 points on tier 1.
+ *
+ * <p>Removing the wait-for-first-click hold afterwards (playtest: the fight read as failing to
+ * start, since the hook-set click had already proven the player present) re-measured at good
+ * 60/48/44/24 and sloppy 20/8/5/2, parked unchanged: a uniform ~15% relative tax that lands the
+ * tiers where this table aims, and the bots overstate it, because their orientation delay models a
+ * player who has not found the overlay yet, which is exactly what the hook-set click rules out.
  *
  * The spread within a row is across the four species; the parked column is the number that matters
  * most, because an earlier set of these constants let a bobber left alone land 90-100% of the two
@@ -129,6 +158,22 @@ public final class MinigameTuning {
     /** Downward acceleration applied every tick. */
     public static final float BOBBER_GRAVITY = 0.00315F;
     /**
+     * Gravity multiplier while the fish is below the bobber's bottom edge: the fish pulls the line.
+     *
+     * <p>This is the answer to the one asymmetry the base physics cannot fix: a click is an instant
+     * upward impulse, but a fall has to build through the damping's ~12-tick time constant, so a
+     * fish that dived at full burst used to spend half a second outside the bar with the player
+     * able to do nothing but watch the bar drift after it. Boosting gravity whenever the bobber is
+     * falling instead re-tunes the hover (the between-click dips deepen, the neutral cadence
+     * climbs, and the bar wobbles; measured, it cost every simulated profile a third of its
+     * catches). Gating the boost on <i>the fish being below the bar</i> costs the hover nothing,
+     * because a covered fish is by definition not below it: cadence, climb feel and every number
+     * derived from them are untouched, and the boost exists exactly and only in the moment the
+     * player wants it, chasing a fish down. With it, the bar covers a 0.30 dive in 12 ticks
+     * against the fastest fish's 15.
+     */
+    public static final float FISH_PULL_GRAVITY_MULT = 2.0F;
+    /**
      * Hard cap in both directions. This is a safety rail, not the thing that limits normal play:
      * damping means ordinary clicking settles at a lower sustained speed (see invariant 1 in the
      * class doc). It binds only on a sustained mash, which is what stops an autoclicker from
@@ -146,23 +191,6 @@ public final class MinigameTuning {
     public static final float CLICK_FALL_ARREST = 0.027F;
     /** Fraction of velocity kept, reversed, when the bobber hits the top or bottom of the track. */
     public static final float BOBBER_BOUNCE = 0.25F;
-    /**
-     * Ticks the fight waits, before it starts, for the player's first click. The bobber hangs where
-     * it began and the clock and the meter do not move; only the fish does.
-     *
-     * <p>The most important part of the opening buffer, because what a slow start actually costs is
-     * not meter, it is altitude: a second of not clicking is a second of gravity, and the player
-     * arrives to find the bar on the floor of the track and the fish somewhere above it, needing a
-     * climb before a single point can be scored. No amount of meter buffer fixes that; measured, it
-     * is the difference between a catch rate that falls off a cliff past 500 ms of reaction time and
-     * one that is flat out to two full seconds.
-     *
-     * <p>It is also free, which is the other reason it is the right knob: anybody who is playing ends
-     * it with their first click and never knows it was there, and anybody who is not gets a stopped
-     * clock rather than a free ride.
-     */
-    public static final int BOBBER_HOLD_TICKS = 40;
-
     /**
      * Bobber height as a track fraction, by difficulty 1..4: 29 px down to 24 px of the 144 px track.
      *
@@ -206,32 +234,38 @@ public final class MinigameTuning {
      */
     public static final float PROGRESS_START = 0.15F;
     /**
-     * Ticks of unbroken coverage needed to fill the meter from empty, by difficulty 1..4 (3 s to
-     * 4.4 s of perfect tracking, and far longer in practice since nobody tracks perfectly).
+     * Ticks of unbroken coverage needed to fill the meter from empty, by difficulty 1..4 (3.75 s to
+     * 6 s of perfect tracking, and far longer in practice since nobody tracks perfectly).
      *
      * <p>No tier is allowed to be much shorter than this. A short fight is decided by variance
      * rather than by the asymptotic duty cycle, and variance is what a parked bobber needs: cutting
      * these to 45-85 measured a parking bot back up to 47-59% on tier 1.
+     *
+     * <p>Lengthened from {60, 72, 84, 88} in the fish-pull pass, for both halves of that trade at
+     * once: the meter had read as moving too fast (a full sweep in ~3 s), and
+     * {@link #FISH_PULL_GRAVITY_MULT} had made tracking mechanically easier across the board, which
+     * longer fights convert back into a skill gradient: the longer the fight, the more it is
+     * decided by sustained duty cycle rather than by a lucky burst of coverage.
      */
-    private static final int[] CATCH_TICKS_BY_DIFFICULTY = {60, 72, 84, 88};
+    private static final int[] CATCH_TICKS_BY_DIFFICULTY = {75, 92, 110, 120};
     /**
      * Junk has no size classes and fights at the easiest tier, but even that would be too long a
      * fight for a boot: it fills faster than any real fish, so hooking garbage is quick and annoying
      * rather than hard. Not faster still, because the same short-fight variance that helps a parked
      * bobber applies here too.
      */
-    private static final int JUNK_CATCH_TICKS = 55;
+    private static final int JUNK_CATCH_TICKS = 65;
     /**
      * Progress drained per tick while the fish is outside the bobber, by difficulty 1..4.
      *
      * <p>Not picked directly. Each is derived from a chosen break-even duty cycle
      * {@code b = drain / (gain + drain)}, i.e. {@code drain = gain * b / (1 - b)}, with these values
-     * putting b at 48%, 48%, 49% and 49%. That window is narrow and both walls are real: measured
+     * putting b at 48%, 48%, 49% and 50%. That window is narrow and both walls are real: measured
      * below about 46%, a bobber parked at mid-track beats the easy tiers on its own; above about
      * 52%, not even a zero-latency player sustains enough coverage and every tier collapses toward
      * zero. Retune the fill times and re-derive these; do not nudge them freely.
      */
-    private static final float[] PROGRESS_DRAIN_BY_DIFFICULTY = {0.0154F, 0.0128F, 0.0114F, 0.0109F};
+    private static final float[] PROGRESS_DRAIN_BY_DIFFICULTY = {0.01231F, 0.01003F, 0.00873F, 0.00833F};
     /**
      * Ticks of drain-free tolerance after the fish slips out of the bobber. This is the deliberate
      * latency allowance for the fight: a click's effect reaches the player's eye roughly 100-150 ms
@@ -290,6 +324,59 @@ public final class MinigameTuning {
 
     /** Hard stop on a fight, in ticks. Reaching it loses the fish. */
     public static final int FIGHT_TIMEOUT_TICKS = 900;
+
+    /**
+     * A strike this soon after the bite is clean, and earns the whole of {@link
+     * #HOOK_SET_BONUS_MAX_TICKS} on the fight's clock.
+     *
+     * <p>Measured in ticks since the bite rather than as a fraction of the window, because the
+     * window is vanilla's {@code nibble} roll and it varies between twenty ticks and sixty. A
+     * fraction would pay the same reaction twice as much on a long roll as on a short one, which
+     * is the dice being rewarded rather than the player.
+     */
+    public static final int HOOK_SET_CLEAN_TICKS = 6;
+
+    /** Past this the strike was merely in time, and earns nothing; between the two it tapers. */
+    public static final int HOOK_SET_LATE_TICKS = 18;
+
+    /**
+     * Most a clean strike opens the meter above {@link #PROGRESS_START}: doubling it, at best.
+     *
+     * <p>Read the {@code PROGRESS_START} note before moving this. Starting progress is the most
+     * expensive thing in here to hand out - it is a permanent credit toward the win, worth the same
+     * to a bobber nobody is holding as to one being played, and 0.10 to 0.30 measured a parked
+     * bobber back up to 43-53% on the easy tiers. What keeps this affordable is that it has to be
+     * earned inside {@link #HOOK_SET_CLEAN_TICKS} of the bite, and that it sits ABOVE the opening
+     * floor rather than lifting it: the floor still holds at {@code PROGRESS_START}, so a player
+     * who wins the head start and then does nothing watches it drain away to where everyone else
+     * began. It is a head start for someone who is already playing, not a cushion for someone who
+     * is not.
+     */
+    public static final float STRIKE_PROGRESS_BONUS_MAX = 0.15F;
+
+    /**
+     * Extra starting progress for a strike made this many ticks after the bite.
+     *
+     * <p>Full inside {@link #HOOK_SET_CLEAN_TICKS}, nothing past {@link #HOOK_SET_LATE_TICKS}, and
+     * a straight taper between.
+     */
+    public static float strikeProgressBonus(int ticksToStrike) {
+        if (ticksToStrike <= HOOK_SET_CLEAN_TICKS) return STRIKE_PROGRESS_BONUS_MAX;
+        if (ticksToStrike >= HOOK_SET_LATE_TICKS) return 0F;
+
+        int span = HOOK_SET_LATE_TICKS - HOOK_SET_CLEAN_TICKS;
+        int into = HOOK_SET_LATE_TICKS - ticksToStrike;
+        return STRIKE_PROGRESS_BONUS_MAX * (into / (float) span);
+    }
+    /**
+     * Ticks after an encounter ends during which rod clicks are swallowed instead of reaching
+     * vanilla. The fight ends mid-cadence, so the taps still in flight would otherwise throw the
+     * line straight back out; each swallowed tap re-arms the guard, so the next cast takes an
+     * intentional click after this much pause. Sized above the ~10-tick gap of the neutral tapping
+     * cadence, comfortably below a deliberate "now cast again".
+     */
+    public static final int RECAST_GUARD_TICKS = 15;
+
     /**
      * How many ticks ahead of the true simulation the HUD positions are pushed.
      *
@@ -312,6 +399,31 @@ public final class MinigameTuning {
     public static float bobberSize(int difficulty) {
         return BOBBER_SIZE_BY_DIFFICULTY[clampDifficulty(difficulty) - 1];
     }
+
+    // --- Back-off: a run of lost fish makes the next one kinder, up to a point ---
+
+    /** Lost fish in a row that count; past here the fight gets no easier. */
+    public static final int BACKOFF_MAX_MISSES = 5;
+    /** How much wider the bar gets per lost fish: five in a row is a bar two-fifths taller. */
+    public static final float BACKOFF_BAR_PER_MISS = 0.08F;
+
+    /** The bar's height, scaled for a run of lost fish. */
+    public static float backoffBarScale(int misses) {
+        return 1F + BACKOFF_BAR_PER_MISS * Math.min(misses, BACKOFF_MAX_MISSES);
+    }
+
+    // --- Experience ---
+
+    /** Landing a fish, by size: small, medium, large, trophy. Bigger fish pay steeply more. */
+    public static final int[] XP_LANDED_BY_SIZE = {3, 6, 12, 24};
+    /** Plus this much at random, so two smalls are not always the same number. */
+    public static final int XP_LANDED_SPREAD = 3;
+    /** Landing junk: vanilla's floor, for the effort of reeling. */
+    public static final int XP_LANDED_JUNK = 1;
+    /** A chest secured on the way in. */
+    public static final int XP_TREASURE = 5;
+    /** A fish that got away, by difficulty tier: a little, and a little more for a big one. */
+    public static final int[] XP_LOST_BY_DIFFICULTY = {1, 1, 2, 3};
 
     public static float progressGain(int difficulty, boolean junk) {
         return 1F / (junk ? JUNK_CATCH_TICKS : CATCH_TICKS_BY_DIFFICULTY[clampDifficulty(difficulty) - 1]);

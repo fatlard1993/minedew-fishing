@@ -70,9 +70,10 @@ public record HookedCatch(FishSpecies species, FishSize size, List<ItemStack> lo
         boolean deepWater = level.getBiome(pos).is(BiomeTags.IS_DEEP_OCEAN);
         long timeOfDay = level.getOverworldClockTime() % 24000L;
         boolean night = timeOfDay >= 13000L && timeOfDay <= 23000L;
+        int misses = com.minedew.fishing.encounter.FishingStreaks.get(level.getServer()).misses(player.getUUID());
         FishSize size = species.isJunk()
             ? FishSize.SMALL
-            : FishSize.roll(random, level.isRaining(), deepWater, night);
+            : FishSize.roll(random, level.isRaining(), deepWater, night, misses);
 
         return new HookedCatch(species, size, loot);
     }

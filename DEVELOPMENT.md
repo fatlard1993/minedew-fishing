@@ -91,16 +91,26 @@ a bobber bar under it (one click, one upward impulse, gravity between clicks, on
 maximum); the catch meter fills while the two overlap and drains while they do not. Full is a catch,
 empty is an escape, and there is a 45 s timeout as a safety net.
 
-The fight does not actually start until the player's first click (or `BOBBER_HOLD_TICKS` at the
-outside): until then the bar hangs where it began and the clock, the meter and the chest timer are
-all stopped, while the fish swims. See the opening buffer under Tuning.
+A landed catch flies to the player as the real vanilla fish mob, scaled by its size class
+(`FishSize.getDisplayScale`, 0.6x to 2.2x), with the haul handed over when it arrives
+(`FishingEncounterManager.CatchFlight`). Junk flies as its item, vanilla-style.
+
+The fight starts on the tick after the hook-set click: that click is the proof the player is
+present, so there is no further wait. (An earlier build additionally held the bar and the clock
+until a first *fight* click, and it read as the game failing to start.) Reaction time is bought by
+the opening floor; see the opening buffer under Tuning.
 
 A fight may also carry a **treasure chest**, which surfaces at a fixed spot partway in and has its
 own meter that only fills while the bobber covers it. Time spent on the chest is time not spent on
 the fish. It is only kept if the fish is also landed.
 
-The species name is never shown during the fight; only the difficulty stars are. It is revealed on
-the catch.
+The overlay names nothing and rates nothing during the fight: not the species, not the size. Both
+are read off how the thing moves and how hard it pulls, and the name is revealed on the catch.
+
+The size used to show as difficulty stars. They were honest, and they were genuinely useful while
+the fight was being tuned - then in play they became a verdict handed down before the first click,
+and one-star fights got abandoned rather than finished. A grade a player can act on before they
+have started is a grade that decides for them.
 
 ## Bestiary
 
@@ -124,10 +134,10 @@ quick and annoying rather than hard.
 
 | Size | Tier | Bobber | Fill time | Break-even duty | Thrash | Bonus pieces |
 |---|---|---|---|---|---|---|
-| Small | ★ | 0.200 | 60 ticks | 48% | none | 0 |
-| Medium | ★★ | 0.185 | 72 ticks | 48% | none | 1 |
-| Large | ★★★ | 0.170 | 84 ticks | 49% | 16 ticks every 170 | 2 |
-| Trophy | ★★★★ | 0.165 | 88 ticks | 49% | 20 ticks every 190 | 4 |
+| Small | ★ | 0.200 | 75 ticks | 48% | none | 2 |
+| Medium | ★★ | 0.185 | 92 ticks | 48% | none | 3 |
+| Large | ★★★ | 0.170 | 110 ticks | 49% | 16 ticks every 170 | 4 |
+| Trophy | ★★★★ | 0.165 | 120 ticks | 50% | 20 ticks every 190 | 6 |
 
 Size is rolled per bite, weighted 50/30/15/5, with rain, deep water and night all pushing toward the
 bigger classes. `TROPHY_THRASH` is layered over the species' own pattern for the two big classes: a
@@ -143,7 +153,10 @@ Briefly:
 
 1. **The fish must not outrun the bobber**, where the bound is the bobber's *sustained climb rate*
    `D/(1-D) * (CLICK_IMPULSE*r/20 - BOBBER_GRAVITY)`, not `BOBBER_TERMINAL_SPEED` (clicking never
-   reaches that).
+   reaches that). Downhill, the bound is transient rather than sustained: a fall builds through the
+   damping's time constant while a burst is instant, which is what `FISH_PULL_GRAVITY_MULT` exists
+   to cover — gravity doubles while the fish is below the bar, and never while the bar covers it,
+   so the hover cadence stays untouched.
 2. **The fish must actually traverse the track.** A fish too slow to cover `FISH_MIN_JUMP` within
    its retarget interval drifts around mid-track, which is exactly what a parked bobber covers.
    Slow fish are not easy fish, they are free fish.
@@ -153,28 +166,25 @@ Briefly:
 ### The opening buffer
 
 Separate from all three invariants, and do not confuse it with them. Break-even governs a fight
-already in progress; the opening buffer governs whether the player was ever in it. It is three knobs:
+already in progress; the opening buffer governs whether the player was ever in it. It is two knobs:
 
 | Knob | What it does |
 |---|---|
-| `BOBBER_HOLD_TICKS` | The fight waits for the first click. Bar hangs, clock stopped, meter frozen, only the fish moves |
 | `PROGRESS_START` | Meter the fight opens with, and the floor it cannot fall through while the opening lasts |
-| `OPENING_FLOOR_TICKS` | How long that floor lasts, in fight ticks (so it starts when the player does) |
+| `OPENING_FLOOR_TICKS` | How long that floor lasts, in fight ticks |
 
-Three things were learned measuring these, all of them the hard way:
+Learned measuring these, the hard way:
 
-- **The hold is the one that matters, and it is nearly free.** What a slow start costs is altitude,
-  not meter: a second of not clicking is a second of gravity, and no amount of meter buffer pays for
-  arriving to find the bar on the floor of the track. Adding the hold is what turned a catch rate
-  that fell off a cliff past 500 ms of reaction time into one that is flat out to two seconds.
-- **The hold must stop the clock, not just the bar.** Holding the bar alone hands a player who never
-  touches the rod a bar parked across mid-track, which is the best camping spot there is: measured, a
-  bobber nobody was holding went back up to 42% on small cod. Freezing the meter and the clock with
-  it makes the wait buy nothing at all.
 - **Buy reaction time in ticks, not in progress.** `PROGRESS_START` is a permanent credit toward the
   win and is worth exactly as much to a bar nobody is holding. Taking `OPENING_FLOOR_TICKS` from 6 to
   35 cost the camping bot almost nothing; taking `PROGRESS_START` from 0.10 to 0.30 instead put a
   parked bobber back at 43-53% on the easy tiers.
+- **A wait-for-first-click hold is not worth its feel cost.** One shipped for a while: bar hung,
+  clock stopped, meter frozen until the first fight click. It measured well (a stopped clock buys
+  nothing for camping, and it made catch rates flat out to two seconds of reaction time) but it
+  played as the game failing to start, because the hook-set click had already proven the player
+  present. Removing it cost the simulated profiles ~15% relative on catch rate and the parking bot
+  nothing; if reaction time ever needs buying again, buy it in `OPENING_FLOOR_TICKS`.
 
 A floor rather than a drain freeze, for the same reason: a freeze makes points won during the opening
 permanent, and a parked bar collects those too.
@@ -200,9 +210,12 @@ each texture at exactly the size it is blitted at; change both together.
 
 ### Headless difficulty simulation
 
-Difficulty is tuned against a simulation, not by eye. The harness drives the real `FishingEncounter`
-/ `FishMotion` / `MinigameTuning` classes (constructed with a null player, which those classes never
-touch) with scripted players, so what it measures is what ships.
+Difficulty is tuned against a simulation, not by eye. The current instrument is `tune_sim.py`, a
+Python mirror of `FishingEncounter` / `FishMotion` / `MinigameTuning` (the original Java-classpath
+harness was not kept). Being a mirror, it measures what ships only while it agrees with the Java
+constants and stepping order — it has drifted once already, and a whole physics scale-up shipped
+unmeasured because of it. Any change to the constants or the step functions goes into both files in
+the same commit.
 
 It needs four things to be worth anything:
 
@@ -223,8 +236,9 @@ It needs four things to be worth anything:
 - **Latency and fumbles as the skill axis**, since a server-authoritative minigame lives or dies on
   how it degrades over a round trip.
 
-Rebuild classes and run against the Loom-resolved runtime classpath; `Bootstrap.bootStrap()` is
-needed before touching `FishSpecies`, because its constants reference `Items`.
+Run it from a Python REPL: `import tune_sim; tune_sim.rate("salmon", "large", tune_sim.GOOD)`,
+with `park=True` for the parking bot. No Minecraft classpath involved, which is the whole reason it
+survives where the Java harness did not — and also why the sync rule above is load-bearing.
 
 ### In game
 
@@ -259,3 +273,7 @@ encounter never starts.
 ## License
 
 MIT License; see the LICENSE file.
+
+## Installation
+
+Install server-side alongside its declared dependencies (see `fabric.mod.json`); connecting clients need only Pandorical. Version targets live in `gradle.properties` (Minecraft, loader, Fabric API) and `fabric.mod.json` (Java).

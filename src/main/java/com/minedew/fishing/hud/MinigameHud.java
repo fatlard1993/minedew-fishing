@@ -21,8 +21,13 @@ import java.util.Map;
  * Pandorical HUD push; the client runs no game logic and only interpolates between the values the
  * server sends.
  *
- * <p>The species is deliberately not named anywhere on this overlay. Only the difficulty stars show,
- * so what is on the line has to be read from how it moves; the name is revealed on the catch.
+ * <p>The overlay names nothing and rates nothing. What is on the line has to be read from how it
+ * moves and how hard it pulls; the name comes on the catch.
+ *
+ * <p>It used to show the size as difficulty stars. They were honest and they were useful while the
+ * fight was being tuned, and in play they turned into a verdict delivered before the first click:
+ * one star read as "not worth finishing" and got abandoned, which is a fish thrown back for being
+ * easy. A fight nobody knows the grade of is a fight everybody plays.
  *
  * <p>Layout note: the overlay's screen position is resolved from the bounding box of its root
  * components, so every animated component stays strictly inside the static track and gauge frames.
@@ -50,7 +55,7 @@ public final class MinigameHud {
 
     // Track frame, and the water column inside its 3px border
     private static final int TRACK_X = 0;
-    private static final int TRACK_Y = 14;
+    private static final int TRACK_Y = 0;
     private static final int TRACK_W = 26;
     private static final int TRACK_H = 150;
     private static final int INNER_X = TRACK_X + 3;
@@ -58,7 +63,7 @@ public final class MinigameHud {
     private static final int INNER_W = 20;
     private static final int INNER_H = 144;
 
-    // Catch gauge frame, and its fill inside a 1px border
+    // Catch gauge frame, and its fill inside the slot: 1px side borders, 2px top and bottom
     private static final int GAUGE_X = 30;
     private static final int GAUGE_Y = TRACK_Y;
     private static final int GAUGE_W = 8;
@@ -100,7 +105,6 @@ public final class MinigameHud {
         HudBuilder hud = new HudBuilder(OVERLAY_ID)
             .anchor(ANCHOR)
             .offset(MARGIN_RIGHT, MARGIN_TOP)
-            .text("stars", TRACK_X, 2, stars(encounter.difficulty))
             .component(new ComponentBuilder("track", ComponentType.SPRITE)
                 .bounds(TRACK_X, TRACK_Y, TRACK_W, TRACK_H)
                 .prop(ComponentType.PROP_TEXTURE, TEXTURE_TRACK))
@@ -236,9 +240,6 @@ public final class MinigameHud {
         public boolean treasureSecured;
     }
 
-    public static String stars(int difficulty) {
-        return "★".repeat(Mth.clamp(difficulty, 1, 4));
-    }
 
     // --- Geometry ---
 

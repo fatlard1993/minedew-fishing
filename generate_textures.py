@@ -107,13 +107,17 @@ def track(width=26, height=150, border=3):
 
 
 def gauge(width=8, height=150):
+    """Side borders are 1px and the top/bottom 2px: the slot is 6x146, exactly the size of
+    gauge_fill.png and of the FILL_* constants in MinigameHud. A uniform 2px border here once left
+    the frame's inner columns under the 6px fill."""
     rows = [[CLEAR] * width for _ in range(height)]
     for y in range(height):
         for x in range(width):
-            edge = min(x, y, width - 1 - x, height - 1 - y)
-            if edge == 0:
+            xedge = min(x, width - 1 - x)
+            yedge = min(y, height - 1 - y)
+            if xedge == 0 or yedge == 0:
                 rows[y][x] = FRAME_DARK
-            elif edge == 1:
+            elif yedge == 1:
                 rows[y][x] = FRAME_MID
             else:
                 rows[y][x] = GAUGE_SLOT

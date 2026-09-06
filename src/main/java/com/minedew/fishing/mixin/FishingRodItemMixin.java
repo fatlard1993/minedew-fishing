@@ -40,6 +40,12 @@ public class FishingRodItemMixin {
                 FishingEncounterManager.handleReelClick(serverPlayer);
             }
             cir.setReturnValue(InteractionResult.PASS);
+        } else if (user instanceof ServerPlayer serverPlayer
+            && FishingEncounterManager.shouldSwallowRecast(serverPlayer)) {
+            // The tail of the tapping cadence that just ended a fight: swallowed, so landing a
+            // fish does not immediately throw the line back out. Casting again takes an
+            // intentional click after a pause.
+            cir.setReturnValue(InteractionResult.PASS);
         }
     }
 }

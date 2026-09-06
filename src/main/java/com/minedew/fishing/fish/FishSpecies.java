@@ -1,5 +1,7 @@
 package com.minedew.fishing.fish;
 
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -28,18 +30,19 @@ import net.minecraft.world.item.Items;
  */
 public enum FishSpecies {
     /** The common catch and the personality everyone learns first: steady, mid-track, short snaps. */
-    COD("Cod", 1.00F, 0.90F, FishMovementPattern.MODERATE_DART, null, 0, 0, Items.COD),
+    COD("Cod", 1.00F, 0.90F, FishMovementPattern.MODERATE_DART, null, 0, 0, Items.COD,
+        EntityTypes.COD),
     /** Runs and glides: hard lunges up the track, then a smooth stretch while it recovers. */
     SALMON("Salmon", 1.03F, 0.95F, FishMovementPattern.FAST_DART,
-        FishMovementPattern.SLOW_SINUSOIDAL, 120, 45, Items.SALMON),
+        FishMovementPattern.SLOW_SINUSOIDAL, 120, 45, Items.SALMON, EntityTypes.SALMON),
     /** Skittish: never settles anywhere, quick retargets with a tremor on top. */
     TROPICAL_FISH("Tropical Fish", 1.02F, 1.00F, FishMovementPattern.FAST_ERRATIC, null, 0, 0,
-        Items.TROPICAL_FISH),
+        Items.TROPICAL_FISH, EntityTypes.TROPICAL_FISH),
     /** Sluggish and buoyant: holds one depth for a long time, then moves, and rides a little high. */
     PUFFERFISH("Pufferfish", 0.98F, 0.90F, FishMovementPattern.SLOW_FLOATER, null, 0, 0,
-        Items.PUFFERFISH),
+        Items.PUFFERFISH, EntityTypes.PUFFERFISH),
     /** Not a fish at all: dead weight that snags, lurches, and stops. No size variants. */
-    JUNK("Junk", 1.00F, 1.20F, FishMovementPattern.SNAG, null, 0, 0, null);
+    JUNK("Junk", 1.00F, 1.20F, FishMovementPattern.SNAG, null, 0, 0, null, null);
 
     private final String displayName;
     private final float baseSpeed;
@@ -49,10 +52,12 @@ public enum FishSpecies {
     private final int accentPeriodTicks;
     private final int accentDurationTicks;
     private final Item bonusItem;
+    private final EntityType<?> displayEntity;
 
     FishSpecies(String displayName, float baseSpeed, float baseAggressiveness,
                 FishMovementPattern pattern, FishMovementPattern accent,
-                int accentPeriodTicks, int accentDurationTicks, Item bonusItem) {
+                int accentPeriodTicks, int accentDurationTicks, Item bonusItem,
+                EntityType<?> displayEntity) {
         this.displayName = displayName;
         this.baseSpeed = baseSpeed;
         this.baseAggressiveness = baseAggressiveness;
@@ -61,6 +66,7 @@ public enum FishSpecies {
         this.accentPeriodTicks = accentPeriodTicks;
         this.accentDurationTicks = accentDurationTicks;
         this.bonusItem = bonusItem;
+        this.displayEntity = displayEntity;
     }
 
     public String getDisplayName() {
@@ -99,6 +105,15 @@ public enum FishSpecies {
      */
     public Item getBonusItem() {
         return this.bonusItem;
+    }
+
+    /**
+     * The vanilla mob flung to the player as the landing animation (scaled by
+     * {@link FishSize#getDisplayScale()}), or null for junk, which flies as its item. Purely
+     * theater: the payout is items either way, delivered when the flight lands.
+     */
+    public EntityType<?> getDisplayEntity() {
+        return this.displayEntity;
     }
 
     public boolean isJunk() {

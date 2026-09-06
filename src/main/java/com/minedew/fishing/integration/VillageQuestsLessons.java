@@ -103,13 +103,14 @@ public final class VillageQuestsLessons {
 				"Tropical fish now. Warm water, out past the coast, and take a bucket if you want to keep one whole. -- One on the line "
 					+ "will do for me.",
 				"catch a tropical fish for {name}",
-				"The stars are the size. They are never the species.",
+				"Nothing up there tells you what you hooked. Read it or guess.",
 				"*almost laughs* That one is a mess to hold on to. Never settles anywhere, keeps changing its mind, and there is a shake "
-					+ "on top of the movement. Nothing else does that. -- Which matters, because you are never told what you have hooked. "
-					+ "The name comes at the end. The stars come at the start, and the stars are the size, not the species.",
-				"So the size is the half you are given and the species is the half you have to read. And the size is not luck alone: rain, "
-					+ "deep water and night each push it bigger, and they stack. Fish a deep spot at night in the rain and you are asking "
-					+ "for the big ones on purpose. Whether that is clever depends on how good you have got.",
+					+ "on top of the movement. Nothing else does that. -- Which matters, because the bar tells you nothing at all. Not the "
+					+ "name, not the size. The name comes at the end, and everything before it you read off how the thing moves and how "
+					+ "hard it pulls.",
+				"And do not wait on the weather for a big one. Better than one in five is already big in flat sunshine -- rain, deep water "
+					+ "and night each tilt it further, and they stack, so fishing a deep spot at night in the rain is asking for them on "
+					+ "purpose. It is a thumb on the scale, not a gate. The big ones turn up whenever they like.",
 				Items.TROPICAL_FISH, stack -> stack.is(Items.TROPICAL_FISH), 8),
 
 			new LessonApi.Lesson(

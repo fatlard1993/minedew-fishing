@@ -55,10 +55,15 @@ Minecraft's own fishing loot table at the moment of the bite and reads the ident
 so Luck of the Sea, open-water treasure, biome-specific junk and any datapack edits all apply
 normally.
 
-Each species has a **fixed movement signature**, and its name is hidden for the whole fight. Only the
-difficulty stars are shown. Learning to recognize a salmon's lunge-and-glide, or a pufferfish's long
-buoyant holds, or the unmistakable dead-weight lurch of junk, is the actual skill the mod is about.
-The name is the reward at the end.
+Each species has a **fixed movement signature**, and the overlay tells you nothing for the whole
+fight - not the name, not the size. Learning to recognize a salmon's lunge-and-glide, or a
+pufferfish's long buoyant holds, or the unmistakable dead-weight lurch of junk, is the actual skill
+the mod is about. The name is the reward at the end.
+
+The size used to show as difficulty stars, and they had to go for the same reason: a grade handed
+down before the first click is a verdict, and one-star fights got abandoned instead of finished. A
+big one announces itself by thrashing anyway, which is a tell you earn rather than one you are
+given.
 
 Difficulty comes from **size**, not species. Every fish comes in Small, Medium, Large and Trophy, and
 the bigger classes get a smaller bar, a longer fight, and a thrash that announces itself no matter
@@ -79,7 +84,22 @@ big fish cut up, which is what actually happened. Vanilla clients see the ordina
 - Tapping at a steady rate holds the bobber level. Learn where that rate is and everything else is a
   nudge away from it
 - Leaving the rod alone will not land you a fish, and neither will an autoclicker. Both were measured
-- Difficulty stars tell you how big it is before you commit. The species you have to read
+- Nothing is named or graded while you fight. Size shows in how hard it pulls, species in how it
+  moves, and the name comes only when it is on the bank
+
+## Getting Better, And Getting Paid
+
+**A bad run gets kinder.** Every fish that gets away makes the next one a little easier to land:
+the bar is a little taller, and the odds tilt a little toward a smaller fish. It keeps going for five
+losses in a row, by which point the bar is two-fifths taller than it started and a trophy is rare,
+and then it stops getting easier. Landing a fish clears it all at once. Junk counts for nothing
+either way, in either direction: a boot lost is a snag, not a fight. The run is kept with the world,
+so logging off in disgust and coming back tomorrow finds the fish still feeling generous.
+
+**Experience, by the fish.** A fish that got away still pays a little, one to three points by how
+hard it was. A fish landed pays by its size, and steeply: a small is a few points, a medium double
+that, a large double again, and a trophy is worth a night of smalls. A chest secured on the way in
+adds a little on top. Junk pays vanilla's floor for the effort of reeling.
 
 ## Pandorical
 
@@ -99,13 +119,9 @@ minedew-fishing jar is ever needed on a client:
 mod leaves their fishing hook alone entirely and vanilla's normal fishing behavior applies unmodified
 for that player. There is no fallback minigame or reduced-feature mode.
 
-## Installation
-
-Install server-side alongside its declared dependencies (see `fabric.mod.json`); connecting clients need only Pandorical. Version targets live in `gradle.properties` (Minecraft, loader, Fabric API) and `fabric.mod.json` (Java).
-
 ## Development
 
-Architecture, the bestiary, tuning invariants, and testing: see [DEVELOPMENT.md](DEVELOPMENT.md).
+Installing is in [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## License
 
