@@ -51,7 +51,7 @@ public final class FishMotion {
     private int tick;
     private int retargetIn;
 
-    public FishMotion(HookedCatch hooked, RandomSource random) {
+    public FishMotion(HookedCatch hooked, RandomSource random, com.minedew.fishing.FishingDifficulty ease) {
         FishSpecies species = hooked.species();
         FishSize size = hooked.size();
 
@@ -70,9 +70,9 @@ public final class FishMotion {
         this.random = random;
         float speed = species.getBaseSpeed() * (species.isJunk() ? 1F : size.getSpeedScale());
         float aggression = species.getBaseAggressiveness() * (species.isJunk() ? 1F : size.getAggressionScale());
-        this.maxSpeed = MinigameTuning.FISH_BASE_MAX_SPEED * speed;
+        this.maxSpeed = MinigameTuning.FISH_BASE_MAX_SPEED * speed * ease.fishSpeed;
         this.pullScale = aggression;
-        this.jitterScale = MinigameTuning.fishErraticScale(hooked.difficulty());
+        this.jitterScale = MinigameTuning.fishErraticScale(hooked.difficulty()) * ease.erratic;
 
         this.active = this.primary;
         this.position = 0.5F + (random.nextFloat() - 0.5F) * 0.4F;

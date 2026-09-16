@@ -18,14 +18,19 @@ whole rule and it is one you already know. Click before the bite and you reel in
 the bite lapse and it is gone. There is a short grace period after the bobber pops back up, which is
 where the mod's network tolerance lives.
 
+Being quick about it pays. A strike within about a third of a second of the bite is a **clean
+strike**: the catch meter opens 15% further along than usual, and the action bar says so. The bonus
+tapers to nothing for a strike just under a second after the bite; past that the hook is simply set.
+
 ### 2. Fight it on the bar
 
 A water column appears with two things in it: a **marker**, swimming up and down on its own, and
 your **bobber**, a bar you keep under it.
 
-Take a second to look at it if you want one. The fight does not start until your first click: until
-then the bar hangs where it is, the meter does not move, and the only thing happening is the fish
-showing you how it swims.
+The fight starts the moment the hook is set, but it cannot be lost in its first four seconds: for
+that long the catch meter will not fall below its usual starting point, which is the time to find the
+marker and settle into a rhythm. Anything above that, a clean strike's head start included, can
+still drain away.
 
 The bobber is driven by **click impulses**. Every right-click gives it one kick upward; gravity pulls
 it down between clicks. Tap faster to rise, ease off to sink. It is deliberately not a held input:
@@ -79,8 +84,8 @@ big fish cut up, which is what actually happened. Vanilla clients see the ordina
 ## Tips
 
 - The hook set is the only timed moment, and it is vanilla's: watch the bobber, not the screen
-- Nothing is lost by taking a moment to read the fish before your first click. The fight is waiting
-  for you, not running without you
+- The first four seconds of a fight cannot lose it. Spend them finding the marker and a rhythm
+  rather than chasing
 - Tapping at a steady rate holds the bobber level. Learn where that rate is and everything else is a
   nudge away from it
 - Leaving the rod alone will not land you a fish, and neither will an autoclicker. Both were measured
@@ -101,6 +106,35 @@ hard it was. A fish landed pays by its size, and steeply: a small is a few point
 that, a large double again, and a trophy is worth a night of smalls. A chest secured on the way in
 adds a little on top. Junk pays vanilla's floor for the effort of reeling.
 
+**Two advancements**, under vanilla's Fishy Business: The Big One for landing a large fish or
+bigger, and Trophy Catch for landing a trophy.
+
+## Fishing Difficulty
+
+On top of the size of the fish there are four difficulties: **Easiest**, **Easy**, **Normal** (the
+default) and **Hard**. The easier ones give a taller bar, a slower, calmer fish and a meter that
+drains slower; Hard gives a shorter bar and a quicker, jumpier fish, and leaves the meter as it is.
+Easiest is easy enough that a bar left parked mid-track lands some of the smaller fish, which for
+someone just learning is the point. A player's difficulty is fixed when the fish bites, so a change
+applies from the next one.
+
+The server's difficulty is `difficulty` in `config/minedew-fishing.properties` (`easiest`, `easy`,
+`normal` or `hard`; default `normal`). Ops can also change it on the Minedew Fishing page of
+Pandorical's mods menu, which writes it back to the file. An op can set one player's over it:
+
+- `/fishing difficulty` - anyone: says the server's difficulty, and yours if an op set one for you.
+  Ops also see every online player who has their own
+- `/fishing difficulty server <level>` - ops: sets the server's difficulty
+- `/fishing difficulty player <players> <level>` - ops: sets it for those players, over the
+  server's. It stays with the player across restarts and deaths
+- `/fishing difficulty player <players> server` - ops: hands those players back to the server's
+
+## Village Quests
+
+With Village Quests installed, a fisherman can teach the minigame as a five-lesson craft: bring a
+cod, a salmon, a pufferfish, a tropical fish and finally a nautilus shell, and each lesson hands back
+how that catch moves on the bar. Finishing it earns a fishing rod.
+
 ## Pandorical
 
 Minedew Fishing is server-authoritative and entirely server-side. The whole state machine (hook-set
@@ -115,9 +149,10 @@ minedew-fishing jar is ever needed on a client:
   which the client animates itself off a phase clock rather than being fed per-tick. The hook set
   renders nothing at all: vanilla's own splash and dipped bobber are the prompt.
 
-**The Pandorical mod is required client-side.** If a connecting player doesn't have Pandorical, this
-mod leaves their fishing hook alone entirely and vanilla's normal fishing behavior applies unmodified
-for that player. There is no fallback minigame or reduced-feature mode.
+**Pandorical is required on the server, and on the client for the minigame.** Vanilla clients can
+join: if a connecting player doesn't have Pandorical, this mod leaves their fishing hook alone
+entirely and vanilla's normal fishing behavior applies unmodified for that player. There is no
+fallback minigame or reduced-feature mode.
 
 ## Development
 

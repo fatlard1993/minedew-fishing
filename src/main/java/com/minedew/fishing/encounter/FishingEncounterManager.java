@@ -143,8 +143,8 @@ public final class FishingEncounterManager {
         // The whole hook-set telegraph: vanilla's own splash, played again at the player and at full
         // volume so it carries at cast range. Vanilla's is 0.25 at the bobber, which is easy to miss.
         playSound(player, SoundEvents.FISHING_BOBBER_SPLASH, 1.0F, 1.0F);
-        MinedewFishing.LOGGER.debug("[minedew-fishing] {} hooked {} (tier {}, bobber {}, window {}, treasure {})",
-            player.getName().getString(), hooked.label(), encounter.difficulty,
+        MinedewFishing.LOGGER.debug("[minedew-fishing] {} hooked {} (tier {}, {}, bobber {}, window {}, treasure {})",
+            player.getName().getString(), hooked.label(), encounter.difficulty, encounter.ease.label,
             encounter.bobberSize, encounter.phaseTicksRemaining, encounter.hasTreasure);
     }
 

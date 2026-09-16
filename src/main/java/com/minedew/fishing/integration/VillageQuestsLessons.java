@@ -41,7 +41,7 @@ public final class VillageQuestsLessons {
 				LessonApi.lines(
 					"Water's right for the next one, when you've the time.",
 					"*doesn't look up* Next one whenever. It'll keep. Fish will too.",
-					"There's another when you want it. No hurry -- there never is, with this."),
+					"There's another when you want it. No hurry. There never is, with this."),
 				LessonApi.lines(
 					"{former} is gone. Their rod is still leaning where they left it. Nobody has moved it.",
 					"You'll have heard about {former}. *long pause* They were teaching you to read them, weren't they."),
@@ -63,26 +63,26 @@ public final class VillageQuestsLessons {
 	private static List<LessonApi.Lesson> lessons() {
 		return List.of(
 			new LessonApi.Lesson(
-				"You want to learn this properly. Right. Bring me a cod -- one you pulled in yourself, and I will know, because the ones "
+				"You want to learn this properly. Right. Bring me a cod. One you pulled in yourself, and I will know, because the ones "
 					+ "in the barrel are mine. Cod first. Everyone starts on cod.",
 				"catch a cod for {name}",
 				"Click while the bobber is under. That's it. That's the only timed part.",
 				"*takes it without looking* Good. Now the only bit of this that is on a clock: the bobber dips, you click. That is the same "
-					+ "moment you have always clicked -- nothing new was added there and nothing new was meant to be. Click before it goes "
+					+ "moment you have always clicked. Nothing new was added there and nothing new was meant to be. Click before it goes "
 					+ "under and you pull in an empty line. Let it come back up and it is gone.",
 				"After that there is no clock at all, only the bar. And cod is the one to learn the feel on: steady, sits about the middle, "
 					+ "short little snaps. Once you know cod you know when something is not cod.",
 				Items.COD, stack -> stack.is(Items.COD), 6),
 
 			new LessonApi.Lesson(
-				"Salmon next. They fight differently and I want you to feel it rather than be told it. -- I will tell you afterwards. "
+				"Salmon next. They fight differently and I want you to feel it rather than be told it. I will tell you afterwards. "
 					+ "Feel it first.",
 				"catch a salmon for {name}",
 				"One click, one kick up. Gravity does the rest. Twice a second holds it level.",
 				"*weighs it in one hand* Now. The bar is not something you hold up, it is something you tap up. Every click is one kick "
-					+ "upward and it sinks between them. About twice a second keeps it level -- find that rate and everything else in the "
+					+ "upward and it sinks between them. About twice a second keeps it level. Find that rate and everything else in the "
 					+ "fight is a nudge either side of it.",
-				"And mashing does nothing. Not 'not much' -- nothing. It will only take one click a tick however many you give it, so past "
+				"And mashing does nothing. Not 'not much'. Nothing. It will only take one click a tick however many you give it, so past "
 					+ "a workable rate the extra ones are thrown away and you have pinned yourself against the top of the track. Salmon "
 					+ "punishes that: it lunges hard up the track, then glides while it gets its breath. You want to be sinking when it glides.",
 				Items.SALMON, stack -> stack.is(Items.SALMON), 6),
@@ -90,39 +90,39 @@ public final class VillageQuestsLessons {
 			new LessonApi.Lesson(
 				"Pufferfish. Nastiest of the four to read, so we do it while you still expect to lose some.",
 				"catch a pufferfish for {name}",
-				"You get about two seconds before it starts. Spend them watching.",
-				"*sets it down carefully, points at it* Here is the thing nobody uses. When the fight comes up, it is not running yet. The "
-					+ "bar hangs, the meter sits still, and the fish swims about showing you exactly what it is -- for about two seconds, "
-					+ "and your first click ends it early. Two seconds of watching is worth more than two seconds of clicking.",
-				"Which is how you catch this one. A pufferfish holds a depth for a long while, does nothing, then moves -- and it rides a "
+				"The first few seconds cannot cost you. Spend them watching.",
+				"*sets it down carefully, points at it* Here is the thing nobody uses. When the fight comes up, the meter cannot fall "
+					+ "below where it started for the first few seconds, whatever you do. So spend them watching the fish instead of "
+					+ "chasing it: it shows you exactly what it is, and four seconds of watching is worth more than four seconds of clicking.",
+				"Which is how you catch this one. A pufferfish holds a depth for a long while, does nothing, then moves. And it rides a "
 					+ "little higher than the rest. If it hangs still and high while you are watching, you have got one, and you can set "
 					+ "your rate before you have lost any of the meter.",
 				Items.PUFFERFISH, stack -> stack.is(Items.PUFFERFISH), 8),
 
 			new LessonApi.Lesson(
-				"Tropical fish now. Warm water, out past the coast, and take a bucket if you want to keep one whole. -- One on the line "
+				"Tropical fish now. Warm water, out past the coast, and take a bucket if you want to keep one whole. One on the line "
 					+ "will do for me.",
 				"catch a tropical fish for {name}",
 				"Nothing up there tells you what you hooked. Read it or guess.",
 				"*almost laughs* That one is a mess to hold on to. Never settles anywhere, keeps changing its mind, and there is a shake "
-					+ "on top of the movement. Nothing else does that. -- Which matters, because the bar tells you nothing at all. Not the "
+					+ "on top of the movement. Nothing else does that. Which matters, because the bar tells you nothing at all. Not the "
 					+ "name, not the size. The name comes at the end, and everything before it you read off how the thing moves and how "
 					+ "hard it pulls.",
-				"And do not wait on the weather for a big one. Better than one in five is already big in flat sunshine -- rain, deep water "
+				"And do not wait on the weather for a big one. Better than one in five is already big in flat sunshine. Rain, deep water "
 					+ "and night each tilt it further, and they stack, so fishing a deep spot at night in the rain is asking for them on "
 					+ "purpose. It is a thumb on the scale, not a gate. The big ones turn up whenever they like.",
 				Items.TROPICAL_FISH, stack -> stack.is(Items.TROPICAL_FISH), 8),
 
 			new LessonApi.Lesson(
-				"Last thing, and it is not a fish. Bring me a nautilus shell. You will not find one by fishing hard -- you find one by "
+				"Last thing, and it is not a fish. Bring me a nautilus shell. You will not find one by fishing hard. You find one by "
 					+ "fishing in open water and being patient about it. Off the shore, nothing over your head. Go on.",
-				"catch a nautilus shell for {name} -- open water, no roof",
+				"catch a nautilus shell for {name}: open water, no roof",
 				"Anything that isn't a fish fights like junk. Dead weight, snag, stop.",
 				"*turns it over, pleased* There. And you will have noticed it did not fight like anything you had met. Everything that is "
-					+ "not one of the four fights the same way -- dead weight that snags, lurches, and stops. A boot does that. So does a "
+					+ "not one of the four fights the same way: dead weight that snags, lurches, and stops. A boot does that. So does a "
 					+ "saddle. So does this, and this is worth having.",
 				"One more and then I will leave you alone. About one fight in five puts a chest up on the track, at a fixed spot, and it "
-					+ "stays put. Covering it costs you the best part of two seconds -- two seconds your catch meter is going down, and it "
+					+ "stays put. Covering it costs you the best part of two seconds, two seconds your catch meter is going down, and it "
 					+ "pays nothing at all unless you land the fish as well. Grab for it the moment it appears and you will lose both. Wait "
 					+ "until the fish drifts across it and take them together. That is the whole trick, and it is the only part of this I "
 					+ "cannot teach you by telling you.",

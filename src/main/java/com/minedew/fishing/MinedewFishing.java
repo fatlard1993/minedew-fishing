@@ -42,6 +42,11 @@ public class MinedewFishing implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        FishingDifficulty.init();
+        FishingConfig.load();
+        FishingConfig.menu();
+        net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback.EVENT.register(
+            (dispatcher, registry, environment) -> FishingCommands.register(dispatcher));
         ServerTickEvents.END_SERVER_TICK.register(FishingEncounterManager::tick);
 
         for (String[] override : FILLET_OVERRIDES) {

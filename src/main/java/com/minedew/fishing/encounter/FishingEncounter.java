@@ -37,6 +37,8 @@ public class FishingEncounter {
     public final int hookEntityId;
     public final HookedCatch hooked;
     public final int difficulty;
+    /** The player's, on top of the fish's tier; fixed at the bite so a change lands on the next fish. */
+    public final com.minedew.fishing.FishingDifficulty ease;
     public final RandomSource random;
 
     // --- Hook set ---
@@ -107,16 +109,18 @@ public class FishingEncounter {
         this.hookEntityId = hookEntityId;
         this.hooked = hooked;
         this.difficulty = Mth.clamp(hooked.difficulty(), 1, 4);
+        this.ease = com.minedew.fishing.FishingDifficulty.of(player);
         this.random = random;
 
         this.phase = Phase.COMMIT;
         this.hookWindowTicks = MinigameTuning.hookWindowTicks(nibbleTicks);
         this.phaseTicksRemaining = this.hookWindowTicks;
 
-        this.fish = new FishMotion(hooked, random);
+        this.fish = new FishMotion(hooked, random, this.ease);
         // Wider for a run of lost fish; junk is quick either way and gets no kindness.
         int misses = hooked.species().isJunk() ? 0 : FishingStreaks.get(player.level().getServer()).misses(player.getUUID());
-        this.bobberSize = Math.min(0.6F, MinigameTuning.bobberSize(this.difficulty) * MinigameTuning.backoffBarScale(misses));
+        this.bobberSize = Math.min(0.6F, MinigameTuning.bobberSize(this.difficulty) * this.ease.bar
+            * MinigameTuning.backoffBarScale(misses));
         this.bobberPosition = 0.5F - this.bobberSize / 2F;
         this.progress = MinigameTuning.PROGRESS_START;
         this.progressGain = MinigameTuning.progressGain(this.difficulty, hooked.species().isJunk());
@@ -197,7 +201,7 @@ public class FishingEncounter {
             // The opening floor, not an opening freeze: points won early are still losable, so the
             // buffer protects a slow start without banking free progress for a bar nobody is holding
             this.progress = Math.max(opening ? MinigameTuning.PROGRESS_START : 0F,
-                this.progress - MinigameTuning.progressDrain(this.difficulty));
+                this.progress - MinigameTuning.progressDrain(this.difficulty) * this.ease.drain);
         }
 
         this.justEnteredBobber = !wasInside && this.fishInsideBobber;

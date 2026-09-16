@@ -33,8 +33,27 @@ hook is left entirely to vanilla fishing. There is no fallback minigame.
 ### Component Map
 
 **Initialization**
-- `MinedewFishing`: registers the server tick hook, the fillet `overrideVanillaItem` reskins, and
-  the mod's asset bundle. That is the whole entrypoint.
+- `MinedewFishing`: registers the `fish_landed` advancement trigger, the difficulty attachment, the
+  config and mods-menu setting, `/fishing`, the server tick hook, the fillet `overrideVanillaItem`
+  reskins, the mod's asset bundle, and the Village Quests lessons when that mod is loaded
+
+**Difficulty setting**
+- `FishingDifficulty`: `EASIEST`/`EASY`/`NORMAL`/`HARD`, each a set of multipliers on bar height,
+  meter drain, fish speed and pattern jitter, layered over the size tier. The per-player choice is a
+  persistent attachment (copied on death); absent means the server's
+- `FishingConfig`: `config/minedew-fishing.properties` (`difficulty`, default `normal`) and the
+  ops-only Pandorical `serverGroup` choice backed by it. A change from the menu or the command is
+  written back to the file, replacing the key's line in place
+- `FishingCommands`: `/fishing difficulty` (anyone, reports), `... server <level>` and
+  `... player <players> <level|server>` (both `LEVEL_GAMEMASTERS`)
+
+**Advancements** (`advancement/`)
+- `FishLandedCriterion`: `minedew-fishing:fish_landed`, fired on a won fight (never junk) with an
+  optional `min_difficulty` condition. `big_one` asks for 3, `trophy` for 4
+
+**Integration** (`integration/`)
+- `VillageQuestsLessons`: the fisherman's five-lesson craft. Refers to Village Quests types directly,
+  so it is only reached behind the `isModLoaded` check
 
 **Fish** (`fish/`)
 - `FishSpecies`: the five movement identities. Not rolled with invented odds: `HookedCatch` rolls
@@ -51,6 +70,8 @@ hook is left entirely to vanilla fishing. There is no fallback minigame.
 - `FishingEncounterManager`: lifecycle, tick loop, click dispatch, outcome resolution, payout
 - `FishingEncounter`: per-player state for one encounter, and the hook-set and fight step functions
 - `MinigameTuning`: every feel knob, plus the invariants that constrain them
+- `FishingStreaks`: fish lost in a row per player, as world `SavedData`; drives the back-off (a
+  wider bar and a smaller-fish tilt per miss, capped at `BACKOFF_MAX_MISSES`)
 
 **HUD** (`hud/`)
 - `MinigameHud`: the fight overlay (track, marker, bobber, catch gauge, treasure chest and its ring).
@@ -85,6 +106,13 @@ ticks), read off the hook in `FishingHookMixin` at the moment vanilla sets it, w
 it plays the splash and flips `DATA_BITING`. That is what pulls the bobber under and keeps it under
 for exactly that many ticks, so the window is open precisely while the cue is showing. Difficulty
 does not shorten it: the difficulty is the fight.
+
+The one thing the hook set's timing does buy is a head start. A strike within `HOOK_SET_CLEAN_TICKS`
+(6) of the bite opens the meter `STRIKE_PROGRESS_BONUS_MAX` (0.15) above `PROGRESS_START`, tapering
+to nothing at `HOOK_SET_LATE_TICKS` (18), and the action bar names it ("Clean strike!"). Measured in
+ticks since the bite, not as a fraction of the window, so a long `nibble` roll does not pay the same
+reaction more. It sits above the opening floor rather than raising it, so an unused head start drains
+back to where everyone else began.
 
 **Fight.** The bar game. The marker swims under its species' pattern; the player taps the rod to keep
 a bobber bar under it (one click, one upward impulse, gravity between clicks, one impulse per tick
@@ -199,9 +227,16 @@ narrow speed/aggression multipliers).
 lever and also the most dangerous, because the bar's height is how much of the track a player who
 stops playing covers for free.
 
+**The difficulty setting**: `FishingDifficulty`'s multipliers, applied on top of the tier. Its class
+doc has the rules: drain is only ever eased, never raised (above ~52% break-even nobody sustains a
+fish), so Hard is a narrower bar and a quicker fish; and the fish stays slower than the bobber at
+every level. Easiest deliberately lets a parked bar land the smaller fish.
+
 **Reaction time**: the opening buffer above, never the difficulty knobs.
 
 **Pacing of the hook set**: `HOOK_GRACE_TICKS` only. The window itself is vanilla's, on purpose.
+The clean-strike head start is `HOOK_SET_CLEAN_TICKS`, `HOOK_SET_LATE_TICKS` and
+`STRIKE_PROGRESS_BONUS_MAX`; read the `PROGRESS_START` note before raising the last.
 
 **HUD**: `hud/MinigameHud.java`. Pixel geometry there mirrors `generate_textures.py`, which draws
 each texture at exactly the size it is blitted at; change both together.
