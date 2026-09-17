@@ -4,6 +4,10 @@ A Fabric mod that replaces the moment a fish bites your line with a Stardew Vall
 minigame: set the hook, then fight the fish on a bar. Runs entirely server-side and renders through
 Pandorical.
 
+## Screenshots
+
+![The fight: the fish on the water column, the catch meter beside it, and a clean strike's bonus](the-fight.png)
+
 ## How It Works
 
 When a fish bites (detected from vanilla's own bite signal, not a heuristic), an encounter begins.

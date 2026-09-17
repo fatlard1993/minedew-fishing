@@ -1,0 +1,18 @@
+{
+	"schemaVersion": 1,
+	"id": "minedew-fishing-gametest",
+	"version": "1.0.0",
+	"name": "Minedew Fishing game tests",
+	"description": "The pictures for the readme and the mod page.",
+	"license": "MIT",
+	"environment": "*",
+	"entrypoints": {
+		"fabric-client-gametest": [
+			"com.minedew.fishing.gametest.Showcase"
+		]
+	},
+	"depends": {
+		"minedew-fishing": "*",
+		"fabric-client-gametest-api-v1": "*"
+	}
+}
