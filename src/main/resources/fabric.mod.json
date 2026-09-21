@@ -27,5 +27,10 @@
 	},
 	"suggests": {
 		"village-quests-justfatlard": "*"
+	},
+	"contact": {
+		"homepage": "https://github.com/fatlard1993/minedew-fishing",
+		"sources": "https://github.com/fatlard1993/minedew-fishing",
+		"issues": "https://github.com/fatlard1993/minedew-fishing/issues"
 	}
 }
