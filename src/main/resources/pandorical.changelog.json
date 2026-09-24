@@ -5,11 +5,13 @@
 	],
 	"versions": {
 		"1.0.1": [
-			"A fishing difficulty, easiest to hard, for the whole server or for one player, on top of whatever the fish itself is. It moves the bar height, the meter drain, the fish's speed and how much it darts about.",
+			"A fishing difficulty, easiest to hard, for the whole server or for one player.",
+			"It moves the bar height, the meter drain, the fish's speed and how much it darts about.",
 			"Losing a fish is kinder now, experience follows the size of the catch, and the water has sounds."
 		],
 		"1.0.0": [
-			"The fight on the line: strike when the bobber goes under, then hold the fish on the bar. Five species by size and fillets to cook.",
+			"The fight on the line: strike when the bobber goes under, then hold the fish on the bar.",
+			"Five species by size, and fillets to cook.",
 			"Advancements for landing a large fish and a trophy, and a villager who teaches how the fight works."
 		]
 	}
