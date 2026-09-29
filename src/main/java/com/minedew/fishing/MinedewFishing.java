@@ -33,16 +33,16 @@ public class MinedewFishing implements ModInitializer {
      * Vanilla clients see the ordinary fish item and the ordinary name; nothing about the mod
      * depends on the reskin landing.
      *
-     * <p>Cod is called whitefish here because Lets Cook names what it smokes by the cut rather than
-     * the animal - Smoked Whitefish, Smoked Oily Fish, Smoked Poultry - and the raw and cooked ones
-     * a player holds beside them should read the same way. Salmon keeps its own name: it is what it
-     * is called on a plate, where cod is one whitefish among many.
+     * <p>Named by the cut and not the animal, the way Lets Cook names what it smokes: Smoked
+     * Whitefish, Smoked Oily Fish, Smoked Poultry. The raw and cooked fillets a player holds beside
+     * those read the same way. The fish in the water keeps its own name - you catch a cod, and it
+     * cuts into whitefish.
      */
     private static final String[][] FILLET_OVERRIDES = {
         {"minecraft:cod", "Whitefish Fillet", "textures/item/cod_fillet.png"},
         {"minecraft:cooked_cod", "Cooked Whitefish Fillet", "textures/item/cooked_cod_fillet.png"},
-        {"minecraft:salmon", "Salmon Fillet", "textures/item/salmon_fillet.png"},
-        {"minecraft:cooked_salmon", "Cooked Salmon Fillet", "textures/item/cooked_salmon_fillet.png"},
+        {"minecraft:salmon", "Oily Fish Fillet", "textures/item/salmon_fillet.png"},
+        {"minecraft:cooked_salmon", "Cooked Oily Fish Fillet", "textures/item/cooked_salmon_fillet.png"},
     };
 
     @Override
