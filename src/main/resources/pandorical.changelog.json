@@ -4,6 +4,9 @@
 		"Runs on the server, so a vanilla client can fish."
 	],
 	"versions": {
+		"1.0.4": [
+			"Release notes rewritten to read plainly; nothing in play changes."
+		],
 		"1.0.3": [
 			"Salmon fillets are oily fish fillets, to match the Smoked Oily Fish they become.",
 			"Both fish are now named by the cut. The fish in the water keep their own names."
