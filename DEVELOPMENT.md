@@ -63,7 +63,7 @@ hook is left entirely to vanilla fishing. There is no fallback minigame.
 **Fish** (`fish/`)
 - `Quarry`: what the fight and the payout read off the thing on the line. `FishSpecies` is the
   vanilla implementation; another mod's comes in through `MinedewFishingApi`. Two hooks with
-  defaults: `dressDisplay` dresses the landing animation's mob (a shark is a reskinned dolphin), and
+  defaults: `dressDisplay` dresses the landing animation's mob (an overlay, a model), and
   `landAlive` lets a catch come up alive instead of being landed, in which case nothing is handed
   over but a chest won alongside it and the reveal reads "Surfaced" instead of "Landed"
 - `FishSpecies`: the five movement identities. Not rolled with invented odds: `HookedCatch` rolls
