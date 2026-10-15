@@ -1,7 +1,7 @@
 package com.minedew.fishing.encounter;
 
 import com.minedew.fishing.MinedewFishing;
-import com.minedew.fishing.fish.FishSpecies;
+import com.minedew.fishing.fish.Quarry;
 import com.minedew.fishing.fish.HookedCatch;
 import com.minedew.fishing.hud.MinigameHud;
 import net.minecraft.ChatFormatting;
@@ -316,7 +316,7 @@ public final class FishingEncounterManager {
         // Rolled here rather than granted here: the treasure rides the catch (see grantCatch), so
         // it arrives in the same moment and by the same path as the fish it was won alongside.
         ItemStack treasure = encounter.treasureSecured ? rollTreasure(level.getRandom()) : null;
-        grantCatch(encounter, level, player, hook, hand, treasure);
+        boolean alive = grantCatch(encounter, level, player, hook, hand, treasure);
 
         // Junk has a size on paper only - it is always SMALL - so landing a boot is not a catch.
         if (!encounter.hooked.species().isJunk()) {
@@ -335,8 +335,11 @@ public final class FishingEncounterManager {
         // The species was hidden for the whole fight; landing it is the reveal - and so is the
         // treasure, which used to arrive in the inventory named by nothing at all. A chest you
         // fought a whole second minigame for is worth being told you won.
-        MutableComponent reveal = Component.literal("Landed: " + encounter.hooked.label())
-            .withStyle(encounter.hooked.species().isJunk() ? ChatFormatting.GRAY : ChatFormatting.AQUA);
+        // Something that came up alive was not landed, it surfaced, and it is still a problem.
+        MutableComponent reveal = alive
+            ? Component.literal("Surfaced: " + encounter.hooked.label()).withStyle(ChatFormatting.RED)
+            : Component.literal("Landed: " + encounter.hooked.label())
+                .withStyle(encounter.hooked.species().isJunk() ? ChatFormatting.GRAY : ChatFormatting.AQUA);
         if (treasure != null) {
             reveal.append(Component.literal("  +  ").withStyle(ChatFormatting.DARK_GRAY));
             if (treasure.getCount() > 1) {
@@ -383,29 +386,37 @@ public final class FishingEncounterManager {
      * mirrored here: the catch flies to the player (as the living fish, see
      * {@link #launchCatchFlight}; junk as its item), experience drops, the fish stat and the
      * fishing-rod-hooked advancement trigger fire, and the rod takes its point of damage.
+     *
+     * <p>Except for a quarry that comes up alive (see {@link Quarry#landAlive}): nothing is handed
+     * over for it but a chest won alongside, because the catch is now in the water and angry.
+     *
+     * @return whether it came up alive
      */
-    private static void grantCatch(FishingEncounter encounter, ServerLevel level, ServerPlayer player,
-                                   FishingHook hook, InteractionHand hand, ItemStack treasure) {
+    private static boolean grantCatch(FishingEncounter encounter, ServerLevel level, ServerPlayer player,
+                                      FishingHook hook, InteractionHand hand, ItemStack treasure) {
         Vec3 origin = hook != null ? hook.position() : player.position();
         RandomSource random = level.getRandom();
+        boolean alive = encounter.hooked.species().landAlive(level, player, origin, encounter.hooked.size());
 
         List<ItemStack> payload = new ArrayList<>();
-        for (ItemStack stack : encounter.hooked.loot()) {
-            payload.add(stack.copy());
-            if (stack.is(ItemTags.FISHES)) {
-                player.awardStat(Stats.FISH_CAUGHT, 1);
+        if (!alive) {
+            for (ItemStack stack : encounter.hooked.loot()) {
+                payload.add(stack.copy());
+                if (stack.is(ItemTags.FISHES)) {
+                    player.awardStat(Stats.FISH_CAUGHT, 1);
+                }
             }
-        }
-        int bonus = bonusPieces(encounter);
-        if (bonus > 0) {
-            payload.add(new ItemStack(encounter.hooked.species().getBonusItem(), bonus));
+            int bonus = bonusPieces(encounter);
+            if (bonus > 0) {
+                payload.add(new ItemStack(encounter.hooked.species().getBonusItem(), bonus));
+            }
         }
         // In the payload, so the chest's contents are subject to the same single-delivery promise
         // as the fish: they fly in together, and a player who logs out mid-flight drops both
         // rather than keeping one and losing the other.
         if (treasure != null) payload.add(treasure);
 
-        if (!launchCatchFlight(encounter, level, player, origin, payload, treasure)) {
+        if (alive || !launchCatchFlight(encounter, level, player, origin, payload, treasure)) {
             // No mob to show (junk, or the spawn failed): the haul flies as items, vanilla-style
             for (ItemStack stack : payload) {
                 spawnTowardsPlayer(level, player, origin, stack);
@@ -427,12 +438,14 @@ public final class FishingEncounterManager {
         ItemStack rod = rodStack(player);
         if (rod != null) {
             if (hook != null) {
-                CriteriaTriggers.FISHING_ROD_HOOKED.trigger(player, rod, hook, encounter.hooked.loot());
+                CriteriaTriggers.FISHING_ROD_HOOKED.trigger(player, rod, hook,
+                    alive ? List.of() : encounter.hooked.loot());
             }
             rod.hurtAndBreak(1, player, hand == InteractionHand.OFF_HAND
                 ? net.minecraft.world.entity.EquipmentSlot.OFFHAND
                 : net.minecraft.world.entity.EquipmentSlot.MAINHAND);
         }
+        return alive;
     }
 
     /**
@@ -442,7 +455,7 @@ public final class FishingEncounterManager {
      * landing at 2 / 3 / 4 / 6 in hand once the loot's own piece is counted.
      */
     private static int bonusPieces(FishingEncounter encounter) {
-        FishSpecies species = encounter.hooked.species();
+        Quarry species = encounter.hooked.species();
         if (species.isJunk() || species.getBonusItem() == null) return 0;
         return encounter.hooked.size().getBonusPieces();
     }
@@ -486,6 +499,7 @@ public final class FishingEncounterManager {
         // CatchFlight.steer), and a velocity set here would be carried by nothing.
 
         if (!level.addFreshEntity(fish)) return false;
+        encounter.hooked.species().dressDisplay(fish, encounter.hooked.size());
 
         // A fish out of water flops, and this one cannot: its AI is off so the line can own the
         // motion, and vanilla's flopping is AI. Played rather than simulated, so it thrashes all

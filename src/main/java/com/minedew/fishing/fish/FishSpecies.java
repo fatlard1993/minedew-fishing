@@ -28,7 +28,7 @@ import net.minecraft.world.item.Items;
  * player while a medium cod landed 61%, which is a difficulty tier hiding inside a flavour knob.
  * Character comes from the pattern's shape, not from how fast it is played.
  */
-public enum FishSpecies {
+public enum FishSpecies implements Quarry {
     /** The common catch and the personality everyone learns first: steady, mid-track, short snaps. */
     COD("Cod", 1.00F, 0.90F, FishMovementPattern.MODERATE_DART, null, 0, 0, Items.COD,
         EntityTypes.COD),

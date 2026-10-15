@@ -4,6 +4,11 @@
 		"Runs on the server, so a vanilla client can fish."
 	],
 	"versions": {
+		"1.1.0": [
+			"Other mods can put something new on the line. Cobble Jaws uses it to put sharks in the ocean.",
+			"Whatever another mod adds fights by the same rules as a fish, and its size is rolled the same way.",
+			"Something can come up out of the water alive instead of being landed; the message then reads Surfaced."
+		],
 		"1.0.4": [
 			"Release notes rewritten to read plainly; nothing in play changes."
 		],

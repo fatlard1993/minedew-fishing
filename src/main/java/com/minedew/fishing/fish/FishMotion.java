@@ -52,7 +52,7 @@ public final class FishMotion {
     private int retargetIn;
 
     public FishMotion(HookedCatch hooked, RandomSource random, com.minedew.fishing.FishingDifficulty ease) {
-        FishSpecies species = hooked.species();
+        Quarry species = hooked.species();
         FishSize size = hooked.size();
 
         this.primary = species.getPattern();

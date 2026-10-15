@@ -1,6 +1,7 @@
 package com.minedew.fishing.fish;
 
 import com.minedew.fishing.access.MinedewFishingHookAccess;
+import com.minedew.fishing.api.MinedewFishingApi;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -32,7 +33,7 @@ import java.util.List;
  * @param size    how hard it fights; junk has no size variants
  * @param loot    exactly what the player gets if they land it
  */
-public record HookedCatch(FishSpecies species, FishSize size, List<ItemStack> loot) {
+public record HookedCatch(Quarry species, FishSize size, List<ItemStack> loot) {
     /** Junk is quick and annoying rather than hard, so it always fights at the easiest tier. */
     public static final int JUNK_DIFFICULTY = 1;
 
@@ -50,20 +51,20 @@ public record HookedCatch(FishSpecies species, FishSize size, List<ItemStack> lo
         return this.size.getDisplayName() + " " + this.species.getDisplayName();
     }
 
-    /** Roll vanilla's fishing table for this hook and classify the result. */
+    /**
+     * Ask anything registered through {@link MinedewFishingApi} first, and failing that roll
+     * vanilla's fishing table for this hook and classify the result.
+     */
     public static HookedCatch roll(ServerLevel level, ServerPlayer player, FishingHook hook, ItemStack rod) {
-        float luck = ((MinedewFishingHookAccess) hook).minedew$luck() + player.getLuck();
-        LootParams params = new LootParams.Builder(level)
-            .withParameter(LootContextParams.ORIGIN, hook.position())
-            .withParameter(LootContextParams.TOOL, rod)
-            .withParameter(LootContextParams.THIS_ENTITY, hook)
-            .withLuck(luck)
-            .create(LootContextParamSets.FISHING);
-
-        LootTable table = level.getServer().reloadableRegistries().getLootTable(BuiltInLootTables.FISHING);
-        List<ItemStack> loot = List.copyOf(table.getRandomItems(params));
-
-        FishSpecies species = loot.isEmpty() ? FishSpecies.JUNK : FishSpecies.fromLoot(loot.getFirst());
+        Quarry species = MinedewFishingApi.bite(level, player, hook);
+        List<ItemStack> loot;
+        if (species != null) {
+            // Its own piece, the way a fish's own piece is the one vanilla's roll handed over
+            loot = species.getBonusItem() == null ? List.of() : List.of(new ItemStack(species.getBonusItem()));
+        } else {
+            loot = rollVanilla(level, player, hook, rod);
+            species = loot.isEmpty() ? FishSpecies.JUNK : FishSpecies.fromLoot(loot.getFirst());
+        }
 
         RandomSource random = level.getRandom();
         BlockPos pos = hook.blockPosition();
@@ -76,5 +77,18 @@ public record HookedCatch(FishSpecies species, FishSize size, List<ItemStack> lo
             : FishSize.roll(random, level.isRaining(), deepWater, night, misses);
 
         return new HookedCatch(species, size, loot);
+    }
+
+    private static List<ItemStack> rollVanilla(ServerLevel level, ServerPlayer player, FishingHook hook, ItemStack rod) {
+        float luck = ((MinedewFishingHookAccess) hook).minedew$luck() + player.getLuck();
+        LootParams params = new LootParams.Builder(level)
+            .withParameter(LootContextParams.ORIGIN, hook.position())
+            .withParameter(LootContextParams.TOOL, rod)
+            .withParameter(LootContextParams.THIS_ENTITY, hook)
+            .withLuck(luck)
+            .create(LootContextParamSets.FISHING);
+
+        LootTable table = level.getServer().reloadableRegistries().getLootTable(BuiltInLootTables.FISHING);
+        return List.copyOf(table.getRandomItems(params));
     }
 }

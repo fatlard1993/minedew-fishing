@@ -81,6 +81,10 @@ The server's difficulty is `difficulty` in `config/minedew-fishing.properties` (
 
 With Village Quests installed, a fisherman can teach the minigame as a five-lesson craft: bring a cod, a salmon, a pufferfish, a tropical fish and finally a nautilus shell, and each lesson hands back how that catch moves on the bar. Finishing it earns a fishing rod.
 
+## Other Things On The Line
+
+Another mod can put something on the line that vanilla's fishing table never would. [Cobble Jaws](https://github.com/fatlard1993/cobble-jaws) does: in the ocean, now and then, the bite is a shark. Whatever it is fights by the same rules as a fish, with its own movement on the bar and its size rolled the same way, and it is only named once it is landed. A small shark is cut into whitefish like a cod. A big one is not landed at all: it comes up out of the water alive and **Surfaced** in red is the only warning you get.
+
 ## Pandorical
 
 Minedew Fishing is server-authoritative and entirely server-side. The whole state machine (hook-set timing, fish motion, bobber physics, meter, treasure, outcome) runs on the server, and no minedew-fishing jar is ever needed on a client:

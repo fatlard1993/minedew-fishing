@@ -51,11 +51,21 @@ hook is left entirely to vanilla fishing. There is no fallback minigame.
 - `FishLandedCriterion`: `minedew-fishing:fish_landed`, fired on a won fight (never junk) with an
   optional `min_difficulty` condition. `big_one` asks for 3, `trophy` for 4
 
+**API** (`api/`)
+- `MinedewFishingApi`: `addBiter` lets another mod take a bite before vanilla's table is rolled.
+  Biters are asked in order and the first non-null `Quarry` wins; a biter that throws is logged once
+  and skipped after that. The size is still rolled here, so difficulty works the same
+
 **Integration** (`integration/`)
 - `VillageQuestsLessons`: the fisherman's five-lesson craft. Refers to Village Quests types directly,
   so it is only reached behind the `isModLoaded` check
 
 **Fish** (`fish/`)
+- `Quarry`: what the fight and the payout read off the thing on the line. `FishSpecies` is the
+  vanilla implementation; another mod's comes in through `MinedewFishingApi`. Two hooks with
+  defaults: `dressDisplay` dresses the landing animation's mob (a shark is a reskinned dolphin), and
+  `landAlive` lets a catch come up alive instead of being landed, in which case nothing is handed
+  over but a chest won alongside it and the reveal reads "Surfaced" instead of "Landed"
 - `FishSpecies`: the five movement identities. Not rolled with invented odds: `HookedCatch` rolls
   vanilla's own `minecraft:gameplay/fishing` table and reads the identity back off the result
 - `FishSize`: `SMALL`/`MEDIUM`/`LARGE`/`TROPHY`, rolled per bite. This is where difficulty comes
@@ -154,6 +164,10 @@ disguise.
 | **Tropical Fish** | `FAST_ERRATIC` | Retargets every 18-34 ticks, shortest hold of any fish, faint per-tick tremor | Skittish. Never settles for long, and never quite sits still even when it does |
 | **Pufferfish** | `SLOW_FLOATER` | Retargets every 26-46 ticks, longest holds, rides slightly high | Sluggish and buoyant. Long dead holds and unhurried moves, but it makes you work up-track |
 | **Junk** | `SNAG` | Retargets every 22-45 ticks with an extreme settle damping and a low bias | Not a fish. Dead pauses, a sudden short lurch, a dead stop, dragging low. A second of this and you know you have hooked garbage |
+
+Anything another mod adds through `MinedewFishingApi` brings its own row. Check its signature
+against this table with `tune_sim.py` before shipping it: the accent combinations are not
+intuitive, and a primary plus a gentler accent can come out far easier than either alone.
 
 Junk has no size variants and always fights at tier 1, with a faster-filling meter, so a boot is
 quick and annoying rather than hard.
