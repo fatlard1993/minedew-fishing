@@ -32,5 +32,12 @@
 		"homepage": "https://github.com/fatlard1993/minedew-fishing",
 		"sources": "https://github.com/fatlard1993/minedew-fishing",
 		"issues": "https://github.com/fatlard1993/minedew-fishing/issues"
+	},
+	"custom": {
+		"modmenu": {
+			"links": {
+				"modmenu.donate": "https://github.com/sponsors/fatlard1993"
+			}
+		}
 	}
 }
