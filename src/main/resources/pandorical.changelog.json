@@ -4,6 +4,9 @@
 		"Runs on the server, so a vanilla client can fish."
 	],
 	"versions": {
+		"1.1.1": [
+			"Mod Menu's Donate button leads to sponsoring the author on GitHub. Nothing in play changes."
+		],
 		"1.1.0": [
 			"Other mods can put something new on the line. Cobble Jaws uses it to put sharks in the ocean.",
 			"Whatever another mod adds fights by the same rules as a fish, and its size is rolled the same way.",
