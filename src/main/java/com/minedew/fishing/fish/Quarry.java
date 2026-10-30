@@ -11,7 +11,8 @@ import org.jspecify.annotations.Nullable;
 /**
  * Whatever is on the end of the line, as far as the fight and the payout need to know.
  *
- * <p>{@link FishSpecies} is the five vanilla gives you. Anything else gets here through
+ * <p>{@link Fish} is everything the water holds, and {@link FishSpecies#JUNK} what it throws back.
+ * Anything else gets here through
  * {@link com.minedew.fishing.api.MinedewFishingApi#addBiter}, and fights, pays and is named by the
  * same rules: size is still rolled here and still decides how hard it is, the movement signature is
  * still fixed per quarry so it can be learned, and the name is still only shown once it is landed.
@@ -51,6 +52,14 @@ public interface Quarry {
      * entity is wearing somebody else's body. Theatre only: the mob is discarded on arrival.
      */
     default void dressDisplay(Mob shown, FishSize size) {}
+
+    /**
+     * The name an advancement asks for it by, {@code namespace:path}, or null for a quarry nothing
+     * collects. Reported with every landing, so a datapack can ask for any catch by it.
+     */
+    default @Nullable String catchId() {
+        return null;
+    }
 
     /**
      * Whether this one comes out of the water alive rather than into the player's hands.

@@ -1,0 +1,31 @@
+{
+  "parent": "minedew-fishing:angler/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:cod"
+    },
+    "title": "Down Among the Rocks",
+    "description": "Land a Cod (the open sea) and a Lingcod (deep, cold sea)",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "cod": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:cod"
+        ]
+      }
+    },
+    "lingcod": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:lingcod"
+        ]
+      }
+    }
+  }
+}

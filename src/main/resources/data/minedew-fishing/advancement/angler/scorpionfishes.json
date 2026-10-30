@@ -1,0 +1,31 @@
+{
+  "parent": "minedew-fishing:angler/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:pufferfish"
+    },
+    "title": "Handle With Care",
+    "description": "Land a Stonefish (cave water, or warm shallows) and a Lionfish (warm sea)",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "stonefish": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:stonefish"
+        ]
+      }
+    },
+    "lionfish": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:lionfish"
+        ]
+      }
+    }
+  }
+}

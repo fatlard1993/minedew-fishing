@@ -3,12 +3,13 @@
 	"id": "minedew-fishing-gametest",
 	"version": "1.0.0",
 	"name": "Minedew Fishing game tests",
-	"description": "The pictures for the readme and the mod page.",
+	"description": "The pictures for the readme and the mod page, and every fish dressed.",
 	"license": "MIT",
 	"environment": "*",
 	"entrypoints": {
 		"fabric-client-gametest": [
-			"com.minedew.fishing.gametest.Showcase"
+			"com.minedew.fishing.gametest.Showcase",
+			"com.minedew.fishing.gametest.Gallery"
 		]
 	},
 	"depends": {

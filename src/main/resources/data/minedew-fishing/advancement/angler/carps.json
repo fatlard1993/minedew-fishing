@@ -1,0 +1,39 @@
+{
+  "parent": "minedew-fishing:angler/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:cod"
+    },
+    "title": "Carp Diem",
+    "description": "Land a Carp (ponds and swamps), a Chub (mountain waters) and a Bream (rivers at night)",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "carp": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:carp"
+        ]
+      }
+    },
+    "chub": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:chub"
+        ]
+      }
+    },
+    "bream": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:bream"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "parent": "minedew-fishing:angler/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:cod"
+    },
+    "title": "Whiskers",
+    "description": "Land a Catfish (deep rivers and swamps, at night or in rain) and a Bullhead (shallow ponds and swamps)",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "catfish": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:catfish"
+        ]
+      }
+    },
+    "bullhead": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:bullhead"
+        ]
+      }
+    }
+  }
+}

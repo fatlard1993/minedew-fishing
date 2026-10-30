@@ -1,0 +1,31 @@
+{
+  "parent": "minedew-fishing:angler/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:salmon"
+    },
+    "title": "Blue Water",
+    "description": "Land a Tuna (deep sea by day, away from the cold) and an Albacore (deep sea at dawn or dusk)",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "tuna": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tuna"
+        ]
+      }
+    },
+    "albacore": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:albacore"
+        ]
+      }
+    }
+  }
+}

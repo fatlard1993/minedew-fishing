@@ -1,0 +1,23 @@
+{
+  "parent": "minedew-fishing:angler/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:cod"
+    },
+    "title": "Water Wolf",
+    "description": "Land a Pike, waiting in the shallows of a cool river or lake",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "pike": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:pike"
+        ]
+      }
+    }
+  }
+}

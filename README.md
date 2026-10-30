@@ -38,13 +38,40 @@ That is the whole gamble: every moment you spend on the chest is a moment the ca
 
 ## What's On The Line
 
-Five things bite, matching exactly what vanilla fishing hands you: **cod**, **salmon**, **tropical fish**, **pufferfish**, and **junk**. Which one you get is not invented odds; the mod rolls Minecraft's own fishing loot table at the moment of the bite and reads the identity off the result, so Luck of the Sea, open-water treasure, biome-specific junk and any datapack edits all apply normally.
+Thirty-three fish, and junk. Which one bit is two questions.
 
-Each species has a **fixed movement signature**, and the overlay tells you nothing for the whole fight - not the name, not the size. Learning to recognize a salmon's lunge-and-glide, or a pufferfish's long buoyant holds, or the unmistakable dead-weight lurch of junk, is the actual skill the mod is about. The name is the reward at the end.
+Vanilla answers the first, the way it always has: the mod rolls Minecraft's own fishing loot table at the moment of the bite, so cod, salmon, pufferfish, tropical fish or junk come up at vanilla's odds, and Luck of the Sea, open-water treasure, biome-specific junk and any datapack edits all apply normally. That roll decides what lands on your plate: a cod roll is a lean fish and cuts into whitefish, a salmon roll an oily one.
+
+The water answers the second. Of the fish that roll could be, which live where your bobber landed, at this hour, in this weather, at this depth? A cod roll in a cold river is a perch; in the same river after dark it might be a walleye; under rock, a blind cave fish. When nothing in particular lives there, it is the vanilla fish itself.
+
+| Water | What lives there |
+|---|---|
+| Rivers | Smallmouth Bass, Perch, Walleye, Bream, Catfish, Pike, Sturgeon, Salmon, Rainbow Trout, Tiger Trout, Shad, Sunfish |
+| Ponds and lakes | Largemouth Bass, Carp, Bullhead, Pike, Perch, Walleye, Rainbow Trout, Sunfish |
+| Swamps | Largemouth Bass, Carp, Bullhead, Catfish, Eel |
+| Mountain water | Chub |
+| Jungle and warm fresh water | Tilapia, Dorado, Blue Discus |
+| The sea | Cod, Lingcod, Sardine, Anchovy, Herring, Tuna, Albacore, Eel, Pufferfish, Blobfish, Stonefish, Lionfish, and the reef's tropical fish |
+| Under rock | Blind Cave Fish, Stonefish |
+
+Within those, the conditions narrow it further:
+
+- **Temperature**: perch, lingcod, herring, tiger trout and sturgeon want cold or frozen water; tilapia, dorado, lionfish and the discus want warm. Minecraft has no seasons, so a winter fish elsewhere is a frozen-biome fish here
+- **Time**: bream and blobfish come out at night, walleye in any low light, albacore at dawn and dusk, rainbow trout, sardines, tuna and dorado by day
+- **Weather**: shad run in the rain, catfish and eels feed in it, rainbow trout and smallmouth bass want it clear
+- **Depth**: the water under the bobber is measured. Pike, bullhead, largemouth bass and sunfish keep to the shallows; walleye, catfish and sturgeon to deep pools; lingcod, albacore, tuna and blobfish to deep sea, the deepest of it for the last two. Deep water, wherever it is, also pushes toward the bigger sizes
+
+A tropical fish is one of vanilla's own: one of its twenty-two named fish (Clownfish, Queen Angelfish, Moorish Idol...), or else named for its pattern and colours, "Lime-Gray Snooper". Vanilla has always had those names, and only ever showed them on a bucket.
+
+Each fish has a **fixed movement signature**, and the overlay tells you nothing for the whole fight - not the name, not the size. Fish move the way their family does - basses leap, carp cruise, pike and catfish sit still and strike, herrings flinch like one fish of a school, eels never stop flowing - and each has its own accent on top: a walleye hangs in the water now and then, a smallmouth bass makes a hard run. Learning to read them is the actual skill the mod is about. The name is the reward at the end. Every fish was tuned so that it fights as hard as cod and pufferfish do: the difference between them is character, not difficulty.
 
 The size used to show as difficulty stars, and they had to go for the same reason: a grade handed down before the first click is a verdict, and one-star fights got abandoned instead of finished. A big one announces itself by thrashing anyway, which is a tell you earn rather than one you are given.
 
 Difficulty comes from **size**, not species. Every fish comes in Small, Medium, Large and Trophy, and the bigger classes get a smaller bar, a longer fight, and a thrash that announces itself no matter what is on the line. Rain, deep water and night all push toward the bigger classes. A bigger fish also pays out more.
+
+### Shown Off
+
+A landed fish does not go straight in the bag. It comes in on the line and is held up in front of you for a moment, side-on and dangling, so you can see what you caught - a trophy pufferfish puffs up while it is there - and then it is yours.
 
 ### Fillets
 
@@ -57,6 +84,19 @@ Cod and salmon, raw and cooked, are reskinned as **fillets**. It is there so the
 - Tapping at a steady rate holds the bobber level. Learn where that rate is and everything else is a nudge away from it
 - Leaving the rod alone will not land you a fish, and neither will an autoclicker. Both were measured
 - Nothing is named or graded while you fight. Size shows in how hard it pulls, species in how it moves, and the name comes only when it is on the bank
+- Where you cast is what you catch. To find a fish, change the water: a colder river, a deeper pool, the same pond after dark or in the rain
+
+## The Fish In The World
+
+The fish swimming in the world are the fish on the line. Each vanilla fish, the first time it loads, becomes whichever fish a bobber in that water would have caught, and looks it: a cod in a cold river is a perch, a salmon in a jungle river a dorado. It keeps that for good, and a bucket carries it. Every one wears the body of the vanilla fish it stands in for, so what it drops is unchanged: a walleye is a cod underneath, and cuts into whitefish.
+
+Vanilla puts no fish at all in a pond or a swamp, so the mod adds some: cod to rivers, swamps, jungles and the ponds of forests, taiga and plains, salmon to swamps and jungles, and tropical fish to jungle water and temperate rivers, where they are sunfish and discus.
+
+The new looks are drawn by Pandorical; a client without it sees the vanilla fish.
+
+## Angler's Log
+
+A tab of advancements for catching them all. One for each family, naming its fish and where to look for them, one each for the pike, the sturgeon, the eel and the blobfish, and two challenges: **Every Fish in the Sea**, for landing one of each of the thirty-three, and **Reef Survey**, for all twenty-two of the reef's named tropical fish.
 
 ## Getting Better, And Getting Paid
 
@@ -64,7 +104,7 @@ Cod and salmon, raw and cooked, are reskinned as **fillets**. It is there so the
 
 **Experience, by the fish.** A fish that got away still pays a little, one to three points by how hard it was. A fish landed pays by its size, and steeply: a small is a few points, a medium double that, a large double again, and a trophy is worth a night of smalls. A chest secured on the way in adds a little on top. Junk pays vanilla's floor for the effort of reeling.
 
-**Two advancements**, under vanilla's Fishy Business: The Big One for landing a large fish or bigger, and Trophy Catch for landing a trophy.
+**Two advancements**, under vanilla's Fishy Business: The Big One for landing a large fish or bigger, and Trophy Catch for landing a trophy. The rest are in the Angler's Log.
 
 ## Fishing Difficulty
 
@@ -79,7 +119,7 @@ The server's difficulty is `difficulty` in `config/minedew-fishing.properties` (
 
 ## Village Quests
 
-With Village Quests installed, a fisherman can teach the minigame as a five-lesson craft: bring a cod, a salmon, a pufferfish, a tropical fish and finally a nautilus shell, and each lesson hands back how that catch moves on the bar. Finishing it earns a fishing rod.
+With Village Quests installed, a fisherman can teach the minigame as a seven-lesson craft. Bring a cod, a salmon, a pufferfish and a tropical fish, and each lesson hands back how that catch moves on the bar. Then two live fish in a bucket: one of fresh water's own, for the lesson on how the water decides which fish bites, and a herring or one of its kin, for the one on how families move alike. Last, a nautilus shell. Finishing it earns a fishing rod.
 
 ## Other Things On The Line
 

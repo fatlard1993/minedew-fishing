@@ -99,17 +99,15 @@ public enum FishSize {
         return this.thrashDurationTicks;
     }
 
-    /**
-     * Roll a size. Rain, deep water and night all push toward the bigger classes, which is the same
-     * "conditions matter" idea the old biome/weather species table carried, moved onto the axis that
-     * now actually drives difficulty.
-     */
     /** Per fish lost in a row: taken off the large and trophy weights, put onto small. */
     private static final int BACKOFF_LARGE_PER_MISS = 3;
     private static final int BACKOFF_TROPHY_PER_MISS = 1;
     private static final int BACKOFF_SMALL_PER_MISS = 4;
 
     /**
+     * Roll a size. Rain, deep water and night all push toward the bigger classes; which fish it is
+     * is the water's business (see {@link Fish}), how big it is is this.
+     *
      * @param misses fish lost in a row by this player; each one tilts the odds toward a smaller
      *               fish, so a bad run drifts toward fights that can be won
      */

@@ -1,0 +1,23 @@
+{
+  "parent": "minedew-fishing:angler/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:salmon"
+    },
+    "title": "Slippery",
+    "description": "Land an Eel, out of the sea or a swamp after dark or in rain",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "eel": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:eel"
+        ]
+      }
+    }
+  }
+}

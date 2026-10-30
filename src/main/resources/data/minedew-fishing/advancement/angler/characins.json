@@ -1,0 +1,31 @@
+{
+  "parent": "minedew-fishing:angler/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:salmon"
+    },
+    "title": "All Teeth",
+    "description": "Land a Dorado (jungle rivers by day) and a Blind Cave Fish (water under rock)",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "dorado": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:dorado"
+        ]
+      }
+    },
+    "blind_cave_fish": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:blind_cave_fish"
+        ]
+      }
+    }
+  }
+}

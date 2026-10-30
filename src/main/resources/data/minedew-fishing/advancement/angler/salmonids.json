@@ -1,0 +1,39 @@
+{
+  "parent": "minedew-fishing:angler/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:salmon"
+    },
+    "title": "Upstream",
+    "description": "Land a Salmon (rivers and cold sea), a Rainbow Trout (rivers and lakes on clear days) and a Tiger Trout (cold rivers)",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "salmon": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:salmon"
+        ]
+      }
+    },
+    "rainbow_trout": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:rainbow_trout"
+        ]
+      }
+    },
+    "tiger_trout": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tiger_trout"
+        ]
+      }
+    }
+  }
+}

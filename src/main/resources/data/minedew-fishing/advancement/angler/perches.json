@@ -1,0 +1,31 @@
+{
+  "parent": "minedew-fishing:angler/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:cod"
+    },
+    "title": "Perch Perfect",
+    "description": "Land a Perch (cold rivers and lakes) and a Walleye (deep river water after dark, or in rain)",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "perch": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:perch"
+        ]
+      }
+    },
+    "walleye": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:walleye"
+        ]
+      }
+    }
+  }
+}

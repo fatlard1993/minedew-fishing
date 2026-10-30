@@ -1,0 +1,21 @@
+{
+	"texture": "minedew-fishing:textures/entity/fish/sturgeon.png",
+	"transforms": {
+		"body": {
+			"scale": [0.9, 0.9, 1.5],
+			"offset": [0, 2.2, 0]
+		},
+		"tail_fin": {
+			"offset": [0, 0, 3.5]
+		},
+		"top_fin": {
+			"offset": [0, 0, 3.5]
+		},
+		"head": {
+			"scale": [1, 1, 1.4]
+		},
+		"nose": {
+			"offset": [0, 0, -1.2]
+		}
+	}
+}

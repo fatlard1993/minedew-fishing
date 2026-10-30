@@ -145,9 +145,15 @@ public final class FishMotion {
         }
         if (wanted == this.active) return;
 
+        // Between two retargeting layers the move already due stays due. Re-rolling it there, as
+        // every switch once did, made each accent a pause: one shorter than its own retarget gap
+        // never moved at all, and measured 25-35 points easier than the same fish without it. A
+        // thrash's onset and the end of a sine glide still re-roll, which is the beat they read as.
+        boolean thrashEdge = this.thrash != null && (wanted == this.thrash || this.active == this.thrash);
+        boolean keepDue = this.active.retargets() && !thrashEdge;
         this.active = wanted;
-        // A layer change re-rolls the retarget clock, so the switch itself reads as a beat
-        this.retargetIn = rollRetargetDelay();
+        int delay = rollRetargetDelay();
+        this.retargetIn = keepDue ? Math.min(this.retargetIn, delay) : delay;
     }
 
     /**

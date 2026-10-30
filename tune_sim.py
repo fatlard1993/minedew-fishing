@@ -34,6 +34,18 @@ FAST_DART       = P(0.50,0,0,20,40,0.035,0.40,0.002,0.00,0.00,-0.02,0.55)
 FAST_ERRATIC    = P(0.50,0,0,18,34,0.030,0.15,0.0015,0.00,0.00,0.02,0.55)
 SNAG            = P(0.50,0,0,22,45,0.060,0.50,0.000,0.00,0.00, 0.06,0.30)
 TROPHY_THRASH   = P(0.50,0,0,12,24,0.045,0.35,0.0035,0.05,0.00, 0.00,0.70)
+LEAP            = P(0.50,0,0,26,46,0.032,0.30,0.002,0.00,0.04, 0.00,0.55)
+STALK           = P(0.50,0,0,26,46,0.036,0.42,0.001,0.00,0.00, 0.01,0.45)
+TERRITORIAL     = P(0.50,0,0,24,46,0.032,0.28,0.001,0.008,0.00,0.02,0.55)
+CRUISE          = P(0.50,0,0,26,46,0.026,0.12,0.001,0.00,0.00, 0.00,0.91)
+BOTTOM_GRIND    = P(0.50,0,0,25,44,0.028,0.26,0.001,0.00,0.00, 0.04,0.50)
+AMBUSH          = P(0.50,0,0,26,46,0.042,0.55,0.000,0.00,0.00, 0.00,0.42)
+SNAP            = P(0.50,0,0,26,45,0.034,0.30,0.001,0.00,0.00, 0.00,0.50)
+SCHOOL          = P(0.50,0,0,25,45,0.032,0.26,0.0015,0.005,0.00,0.00,0.50)
+RUN             = P(0.50,0,0,26,44,0.034,0.28,0.001,0.00,0.00, 0.00,0.60)
+SERPENTINE      = P(0.50,0,0,26,46,0.022,0.10,0.001,0.00,0.00, 0.00,0.90)
+LURK            = P(0.50,0,0,24,44,0.045,0.60,0.000,0.00,0.00, 0.02,0.40)
+SLUMP           = P(0.50,0,0,24,44,0.026,0.30,0.000,0.00,0.00, 0.04,0.45)
 
 SPECIES = {  # name: (baseSpeed, baseAggr, primary, accent, accentPeriod, accentDur, junk)
     "cod":      (1.00,0.90,MODERATE_DART,None,0,0,False),
@@ -41,6 +53,66 @@ SPECIES = {  # name: (baseSpeed, baseAggr, primary, accent, accentPeriod, accent
     "tropical": (1.02,1.00,FAST_ERRATIC,None,0,0,False),
     "puffer":   (0.98,0.90,SLOW_FLOATER,None,0,0,False),
 }
+# ---- the named fish (mirrors fish/FishFamily and fish/Fish) ----
+FAMILIES = {  # name: (baseSpeed, baseAggr, primary)
+    "groundfish":     (1.00,0.90,MODERATE_DART),
+    "sunfishes":      (1.00,0.92,LEAP),
+    "perches":        (1.01,0.92,STALK),
+    "carps":          (1.00,0.92,CRUISE),
+    "catfishes":      (0.99,0.92,BOTTOM_GRIND),
+    "pikes":          (1.02,0.95,AMBUSH),
+    "sturgeons":      (0.99,0.92,BOTTOM_GRIND),
+    "cichlids":       (1.01,0.92,TERRITORIAL),
+    "characins":      (1.00,0.92,SNAP),
+    "salmonids":      (1.03,0.95,FAST_DART),
+    "herrings":       (1.00,0.92,SCHOOL),
+    "tunas":          (1.00,0.92,RUN),
+    "eels":           (1.00,0.92,SERPENTINE),
+    "scorpionfishes": (0.99,0.92,LURK),
+    "puffers":        (0.98,0.90,SLOW_FLOATER),
+    "sculpins":       (0.98,0.90,SLUMP),
+    "reef":           (1.02,1.00,FAST_ERRATIC),
+}
+FISH = {  # name: (family, accent, accentPeriod, accentDuration, strength)
+    "cod": ("groundfish", None, 0, 0, 1.00),
+    "lingcod": ("groundfish", BOTTOM_GRIND, 220, 45, 1.00),
+    "largemouth_bass": ("sunfishes", AMBUSH, 220, 30, 1.10),
+    "smallmouth_bass": ("sunfishes", FAST_DART, 160, 30, 1.05),
+    "perch": ("perches", SCHOOL, 160, 70, 0.95),
+    "walleye": ("perches", SLOW_FLOATER, 160, 20, 1.00),
+    "carp": ("carps", BOTTOM_GRIND, 220, 70, 1.10),
+    "chub": ("carps", FAST_DART, 220, 45, 0.95),
+    "bream": ("carps", SLOW_FLOATER, 120, 45, 1.05),
+    "catfish": ("catfishes", AMBUSH, 160, 45, 1.00),
+    "bullhead": ("catfishes", MODERATE_DART, 220, 45, 1.10),
+    "pike": ("pikes", FAST_DART, 220, 30, 1.00),
+    "sturgeon": ("sturgeons", LEAP, 220, 45, 0.90),
+    "tilapia": ("cichlids", None, 0, 0, 1.00),
+    "blind_cave_fish": ("characins", SLOW_FLOATER, 160, 45, 0.95),
+    "salmon": ("salmonids", SLOW_SINUSOIDAL, 120, 45, 1.00),
+    "rainbow_trout": ("salmonids", SLOW_SINUSOIDAL, 220, 70, 1.05),
+    "tiger_trout": ("salmonids", SLOW_SINUSOIDAL, 180, 60, 0.95),
+    "sardine": ("herrings", None, 0, 0, 1.00),
+    "anchovy": ("herrings", FAST_ERRATIC, 220, 30, 0.95),
+    "herring": ("herrings", MODERATE_DART, 220, 30, 1.05),
+    "shad": ("herrings", LEAP, 160, 30, 0.90),
+    "tuna": ("tunas", FAST_DART, 220, 30, 0.95),
+    "albacore": ("tunas", SNAP, 120, 70, 1.10),
+    "eel": ("eels", AMBUSH, 160, 30, 0.90),
+    "dorado": ("characins", RUN, 220, 70, 0.95),
+    "pufferfish": ("puffers", None, 0, 0, 1.00),
+    "blobfish": ("sculpins", None, 0, 0, 1.00),
+    "stonefish": ("scorpionfishes", None, 0, 0, 1.00),
+    "tropical_fish": ("reef", None, 0, 0, 1.00),
+    "sunfish": ("sunfishes", FAST_ERRATIC, 220, 30, 0.95),
+    "blue_discus": ("cichlids", SLOW_FLOATER, 220, 30, 0.95),
+    "lionfish": ("scorpionfishes", SLOW_FLOATER, 160, 45, 1.10),
+}
+for _name, (_family, _acc, _ap, _ad, _strength) in FISH.items():
+    _bs, _ba, _prim = FAMILIES[_family]
+    SPECIES[_name] = (_bs, _ba * _strength, _prim, _acc, _ap, _ad, False)
+
+
 SIZES = {  # name: (difficulty, speedScale, aggrScale, thrashPeriod, thrashDur)
     "small":  (1,1.00,0.90,0,0), "medium": (2,1.00,1.00,0,0),
     "large":  (3,1.02,1.05,170,16), "trophy": (4,1.05,1.10,190,20),
@@ -90,8 +162,10 @@ class Fish:
         if self.thrash and (self.tick + self.thrashPhase) % self.thrashPeriod < self.thrashDur:
             want = self.thrash
         if want is not self.active:
+            keep = self.active.retargets() and not (self.thrash is not None and self.thrash in (want, self.active))
             self.active = want
-            self.retargetIn = self._rollDelay()
+            # Between two retargeting layers the move already due stays due; see FishMotion
+            self.retargetIn = min(self.retargetIn, self._rollDelay()) if keep else self._rollDelay()
 
     def step(self):
         self.tick += 1

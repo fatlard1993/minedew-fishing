@@ -1,0 +1,31 @@
+{
+  "parent": "minedew-fishing:angler/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:tropical_fish"
+    },
+    "title": "Hot Water",
+    "description": "Land a Tilapia (warm fresh water) and a Blue Discus (jungle and warm fresh water)",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "tilapia": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tilapia"
+        ]
+      }
+    },
+    "blue_discus": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:blue_discus"
+        ]
+      }
+    }
+  }
+}

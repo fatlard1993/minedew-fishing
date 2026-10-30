@@ -53,6 +53,7 @@ public class MinedewFishing implements ModInitializer {
         net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback.EVENT.register(
             (dispatcher, registry, environment) -> FishingCommands.register(dispatcher));
         ServerTickEvents.END_SERVER_TICK.register(FishingEncounterManager::tick);
+        com.minedew.fishing.fish.WildFish.register();
 
         for (String[] override : FILLET_OVERRIDES) {
             PandoricalApi.content().overrideVanillaItem(override[0], new VanillaItemOverride()

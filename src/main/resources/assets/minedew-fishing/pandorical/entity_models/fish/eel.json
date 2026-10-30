@@ -1,0 +1,17 @@
+{
+	"texture": "minedew-fishing:textures/entity/fish/eel.png",
+	"transforms": {
+		"body_front": {
+			"scale": [0.7, 0.7, 1.5],
+			"offset": [0, 6, 3.6]
+		},
+		"body_back": {
+			"scale": [0.7, 0.7, 1.5],
+			"offset": [0, 6, 3.6]
+		},
+		"head": {
+			"scale": [0.8, 0.8, 1],
+			"offset": [0, 4, 0]
+		}
+	}
+}

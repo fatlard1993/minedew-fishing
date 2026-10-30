@@ -34,8 +34,9 @@ hook is left entirely to vanilla fishing. There is no fallback minigame.
 
 **Initialization**
 - `MinedewFishing`: registers the `fish_landed` advancement trigger, the difficulty attachment, the
-  config and mods-menu setting, `/fishing`, the server tick hook, the fillet `overrideVanillaItem`
-  reskins, the mod's asset bundle, and the Village Quests lessons when that mod is loaded
+  config and mods-menu setting, `/fishing`, the server tick hook, the wild fish, the fillet
+  `overrideVanillaItem` reskins, the mod's asset bundle, and the Village Quests lessons when that
+  mod is loaded
 
 **Difficulty setting**
 - `FishingDifficulty`: `EASIEST`/`EASY`/`NORMAL`/`HARD`, each a set of multipliers on bar height,
@@ -49,7 +50,11 @@ hook is left entirely to vanilla fishing. There is no fallback minigame.
 
 **Advancements** (`advancement/`)
 - `FishLandedCriterion`: `minedew-fishing:fish_landed`, fired on a won fight (never junk) with an
-  optional `min_difficulty` condition. `big_one` asks for 3, `trophy` for 4
+  optional `min_difficulty` condition and an optional `fish` list of catch ids, any of which will do.
+  `big_one` asks for 3, `trophy` for 4
+- The Angler's Log (`advancement/angler/`): a tab with one advancement per family, one per rare solo
+  fish, and the `every_fish` and `reef_survey` challenges. Written by hand; the `Gallery` game test
+  fails if a fish in `Fish` or one of vanilla's named tropical fish is missing from the challenges
 
 **API** (`api/`)
 - `MinedewFishingApi`: `addBiter` lets another mod take a bite before vanilla's table is rolled.
@@ -57,8 +62,11 @@ hook is left entirely to vanilla fishing. There is no fallback minigame.
   and skipped after that. The size is still rolled here, so difficulty works the same
 
 **Integration** (`integration/`)
-- `VillageQuestsLessons`: the fisherman's five-lesson craft. Refers to Village Quests types directly,
-  so it is only reached behind the `isModLoaded` check
+- `VillageQuestsLessons`: the fisherman's seven-lesson craft. The two bucket lessons read the fish
+  out of the bucket (`WildFish.inBucket`), the freshwater one through `Fish.foundIn`, so it follows
+  the fish's own conditions. New lessons go before the last: Village Quests counts progress in
+  lessons done. Refers to Village Quests types directly, so it is only reached behind the
+  `isModLoaded` check
 
 **Fish** (`fish/`)
 - `Quarry`: what the fight and the payout read off the thing on the line. `FishSpecies` is the
@@ -66,8 +74,24 @@ hook is left entirely to vanilla fishing. There is no fallback minigame.
   defaults: `dressDisplay` dresses the landing animation's mob (an overlay, a model), and
   `landAlive` lets a catch come up alive instead of being landed, in which case nothing is handed
   over but a chest won alongside it and the reveal reads "Surfaced" instead of "Landed"
-- `FishSpecies`: the five movement identities. Not rolled with invented odds: `HookedCatch` rolls
-  vanilla's own `minecraft:gameplay/fishing` table and reads the identity back off the result
+- `FishSpecies`: what vanilla's table handed over (cod, salmon, tropical fish, pufferfish, junk).
+  Not rolled with invented odds: `HookedCatch` rolls vanilla's own `minecraft:gameplay/fishing`
+  table and reads the identity back off the result. Junk fights as itself; the four fish defer to
+  their plain `Fish`
+- `Fish`: every catchable fish, each tied to the vanilla roll it narrows (which decides its fillet
+  and the vanilla body it borrows), a weight, and a `Waters` predicate. `Fish.bite` picks among the
+  fish of the rolled kind that live where the bobber is, falling back to the vanilla fish itself
+- `FishFamily`: kin, and so movement: each family's pattern, base speed and aggressiveness. A fish
+  adds an accent and a strength trim of at most a tenth
+- `Waters`: the water a fish was found in - kind (ocean, river, swamp, lake, cave), temperature,
+  depth measured down the column, mountains, jungle, the hour, the weather
+- `Look`: a fish's body, its Pandorical skin (an entity model under
+  `pandorical/entity_models/fish/`, from `generate_fish_textures.py`) and draw scale, or a
+  tropical-fish variant
+- `ReefFish`: one tropical fish off the reef, by its own variant, named as vanilla names them
+- `WildFish`: the identity of fish swimming in the world, as a persistent attachment rolled on first
+  load from the same table, carried through buckets by `AbstractFishMixin`; also the freshwater
+  spawns that give rivers, swamps and ponds fish to dress
 - `FishSize`: `SMALL`/`MEDIUM`/`LARGE`/`TROPHY`, rolled per bite. This is where difficulty comes
   from; it also sets the size bonus payout
 - `FishMovementPattern`: the per-pattern motion knobs (retarget interval, pull, burst, jitter,
@@ -95,6 +119,7 @@ hook is left entirely to vanilla fishing. There is no fallback minigame.
   lifecycle
 - `FishingRodItemMixin`: observes the rod use as minigame input, then cancels it so vanilla's
   `retrieve()` cannot end the cast with an immediate real catch
+- `AbstractFishMixin`: carries a wild fish's identity through a bucket and back
 
 **Access** (`access/MinedewFishingHookAccess.java`)
 - Duck interface implemented by the hook mixin, exposing the hook's private Luck of the Sea value so
@@ -129,9 +154,13 @@ a bobber bar under it (one click, one upward impulse, gravity between clicks, on
 maximum); the catch meter fills while the two overlap and drains while they do not. Full is a catch,
 empty is an escape, and there is a 45 s timeout as a safety net.
 
-A landed catch flies to the player as the real vanilla fish mob, scaled by its size class
-(`FishSize.getDisplayScale`, 0.6x to 2.2x), with the haul handed over when it arrives
-(`FishingEncounterManager.CatchFlight`). Junk flies as its item, vanilla-style.
+A landed catch flies to the player as the real vanilla fish mob, dressed as the fish it is and
+scaled by its size class (`FishSize.getDisplayScale`, 0.6x to 2.2x), and is held up in front of them
+for `SHOW_TICKS`, side-on and dangling, before the haul is handed over
+(`FishingEncounterManager.CatchFlight`). Out of the water vanilla's cod, salmon and tropical fish
+renderers lay the fish on its side; the `dangle` animation turns the model's root back a quarter
+turn and moves it back by the model's height so the flank faces the player (`dangle_puffer` for the
+pufferfish body, which stays upright). Junk flies as its item, vanilla-style.
 
 The fight starts on the tick after the hook-set click: that click is the proof the player is
 present, so there is no further wait. (An earlier build additionally held the bar and the clock
@@ -152,10 +181,12 @@ have started is a grade that decides for them.
 
 ## Bestiary
 
-Five identities, exactly matching what vanilla fishing hands you. Species decides how a fight
-**feels**; size decides how **hard** it is. The two are deliberately separate axes, and the species
-speed/aggression multipliers are kept narrow so a species never becomes a difficulty tier in
-disguise.
+Vanilla's table picks the kind (cod, salmon, tropical fish, pufferfish, junk); the water picks the
+fish (`Fish`). Species decides how a fight **feels**; size decides how **hard** it is. The two are
+deliberately separate axes, and the speed/aggression multipliers are kept narrow so a species never
+becomes a difficulty tier in disguise.
+
+The vanilla four keep their old signatures, unchanged:
 
 | Species | Pattern | Signature | What it feels like |
 |---|---|---|---|
@@ -165,8 +196,43 @@ disguise.
 | **Pufferfish** | `SLOW_FLOATER` | Retargets every 26-46 ticks, longest holds, rides slightly high | Sluggish and buoyant. Long dead holds and unhurried moves, but it makes you work up-track |
 | **Junk** | `SNAG` | Retargets every 22-45 ticks with an extreme settle damping and a low bias | Not a fish. Dead pauses, a sudden short lurch, a dead stop, dragging low. A second of this and you know you have hooked garbage |
 
+Every other fish swims its family's pattern (`FishFamily`) with an accent of its own:
+
+| Family | Pattern | Fish |
+|---|---|---|
+| Groundfish | `MODERATE_DART` | Cod, Lingcod |
+| Sunfishes | `LEAP` | Largemouth Bass, Smallmouth Bass, Sunfish |
+| Perches | `STALK` | Perch, Walleye |
+| Carps | `CRUISE` | Carp, Chub, Bream |
+| Catfishes | `BOTTOM_GRIND` | Catfish, Bullhead |
+| Pikes | `AMBUSH` | Pike |
+| Sturgeons | `BOTTOM_GRIND` | Sturgeon |
+| Cichlids | `TERRITORIAL` | Tilapia, Blue Discus |
+| Characins | `SNAP` | Dorado, Blind Cave Fish |
+| Salmonids | `FAST_DART` | Salmon, Rainbow Trout, Tiger Trout |
+| Herrings | `SCHOOL` | Sardine, Anchovy, Herring, Shad |
+| Tunas | `RUN` | Tuna, Albacore |
+| Eels | `SERPENTINE` | Eel |
+| Scorpionfishes | `LURK` | Stonefish, Lionfish |
+| Puffers | `SLOW_FLOATER` | Pufferfish |
+| Sculpins | `SLUMP` | Blobfish |
+| Reef Fish | `FAST_ERRATIC` | the reef's tropical fish |
+
+Each family pattern was tuned alone in `tune_sim.py` until a medium fish landed for a good player
+about as often as a medium cod or pufferfish, and each fish's accent timing and strength searched
+until the fish as a whole did too: for a good player every medium fish lands 48-66% (cod 54,
+pufferfish 68), a sloppy one 4-11%, a parked bar 0-2% and an autoclicker never. The table in
+`tune_sim.py` mirrors `Fish`; keep the two together.
+
+Two things the tuning turned up. A sine primary slow enough to read as gliding is one a bar can sit
+on (95% for a sloppy player), so `CRUISE` and `SERPENTINE` glide by retargeting with almost no
+settle instead. And an accent switch must not re-roll the retarget clock between two retargeting
+layers: it used to, which made every accent a pause and every accented fish 25-35 points easier
+than its family. `FishMotion` keeps the move already due; a thrash's onset and the end of a sine
+glide still re-roll, which leaves the vanilla four exactly as they were.
+
 Anything another mod adds through `MinedewFishingApi` brings its own row. Check its signature
-against this table with `tune_sim.py` before shipping it: the accent combinations are not
+against these with `tune_sim.py` before shipping it: the accent combinations are not
 intuitive, and a primary plus a gentler accent can come out far easier than either alone.
 
 Junk has no size variants and always fights at tier 1, with a faster-filling meter, so a boot is
@@ -181,8 +247,9 @@ quick and annoying rather than hard.
 | Large | ★★★ | 0.170 | 110 ticks | 49% | 16 ticks every 170 | 4 |
 | Trophy | ★★★★ | 0.165 | 120 ticks | 50% | 20 ticks every 190 | 6 |
 
-Size is rolled per bite, weighted 50/30/15/5, with rain, deep water and night all pushing toward the
-bigger classes. `TROPHY_THRASH` is layered over the species' own pattern for the two big classes: a
+Size is rolled per bite, weighted 50/30/15/5, with rain, deep water (a deep ocean, or at least
+`Waters.DEEP` blocks of it under the bobber anywhere) and night all pushing toward the bigger
+classes. `TROPHY_THRASH` is layered over the species' own pattern for the two big classes: a
 big one announces itself no matter what species it is.
 
 ## Tuning
@@ -255,6 +322,14 @@ The clean-strike head start is `HOOK_SET_CLEAN_TICKS`, `HOOK_SET_LATE_TICKS` and
 **HUD**: `hud/MinigameHud.java`. Pixel geometry there mirrors `generate_textures.py`, which draws
 each texture at exactly the size it is blitted at; change both together.
 
+**Fish skins**: `generate_fish_textures.py` writes every skin's texture and Pandorical entity model
+from one table, painted onto the vanilla cod, salmon and pufferfish UV layouts. Stretches are given
+about each part's own vanilla pivot, because Pandorical scales a part's pivot along with the part.
+The names are the ones `Fish` passes to `Look.skin`; add a fish in both places.
+
+**Where fish live**: the `Waters` predicate and weight on each `Fish`. The Angler's Log descriptions
+hint at those conditions in words, so a changed condition wants its hint changed too.
+
 ## Testing
 
 ### Headless difficulty simulation
@@ -288,6 +363,25 @@ It needs four things to be worth anything:
 Run it from a Python REPL: `import tune_sim; tune_sim.rate("salmon", "large", tune_sim.GOOD)`,
 with `park=True` for the parking bot. No Minecraft classpath involved, which is the whole reason it
 survives where the Java harness did not — and also why the sync rule above is load-bearing.
+
+Every named fish is in its table too (`FAMILIES` and `FISH`, mirroring `FishFamily` and `Fish`), and
+`tune_sim.rate("walleye", "medium", tune_sim.GOOD)` measures one.
+
+### Game tests
+
+Client game tests, which open a window, so run them under xvfb:
+
+```bash
+xvfb-run -a -s "-screen 0 2048x1152x24" ./gradlew runClientGameTest
+```
+
+- `Showcase`: the fight, as the README's picture
+- `Gallery`: fails if a fish in `Fish`, or one of vanilla's named tropical fish, is missing from the
+  Angler's Log challenges; checks a cod let loose in a pond becomes a pond fish, wears its skin and
+  keeps it through a bucket; and photographs every fish dressed (`gallery.png`) and a landed one on
+  show (`the-show.png`), which is the only way to judge the skins and the hold
+
+Frames land in `build/run/clientGameTest/screenshots`.
 
 ### In game
 

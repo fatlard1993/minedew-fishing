@@ -1,0 +1,47 @@
+{
+  "parent": "minedew-fishing:angler/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:salmon"
+    },
+    "title": "Bait Ball",
+    "description": "Land a Sardine (shallow seas by day, away from the cold), an Anchovy (coastal shallows), a Herring (cold sea) and a Shad (rivers in rain)",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "sardine": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:sardine"
+        ]
+      }
+    },
+    "anchovy": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:anchovy"
+        ]
+      }
+    },
+    "herring": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:herring"
+        ]
+      }
+    },
+    "shad": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:shad"
+        ]
+      }
+    }
+  }
+}

@@ -23,8 +23,8 @@ package com.minedew.fishing.fish;
  * bobber left alone covers: an earlier set of these knobs measured a bobber parked at mid-track
  * landing 90-100% of the two easy tiers.
  *
- * <p>Patterns are assigned per species in {@link FishSpecies} and never rerolled, so they are
- * learnable; {@link FishSize} layers a thrash on top of the bigger classes. Units are track
+ * <p>Patterns are assigned per family in {@link FishFamily}, with an accent per fish in {@link Fish},
+ * and never rerolled, so they are learnable; {@link FishSize} layers a thrash on top of the bigger classes. Units are track
  * fractions (1.0 = the full height of the track) per tick, at 20 ticks/second.
  */
 public enum FishMovementPattern {
@@ -67,7 +67,42 @@ public enum FishMovementPattern {
      */
     SNAG(0.50F, 0F, 0F, 22, 45, 0.060F, 0.50F, 0.000F, 0.00F, 0.00F, 0.06F, 0.30F),
     /** Layered on top of a big fish's own pattern by {@link FishSize}: it thrashes. */
-    TROPHY_THRASH(0.50F, 0F, 0F, 12, 24, 0.045F, 0.35F, 0.0035F, 0.05F, 0.00F, 0.00F, 0.70F);
+    TROPHY_THRASH(0.50F, 0F, 0F, 12, 24, 0.045F, 0.35F, 0.0035F, 0.05F, 0.00F, 0.00F, 0.70F),
+
+    // The families' own patterns (see FishFamily). Each was put through tune_sim.py alone and lands
+    // a medium fish for a good player as often as cod and pufferfish do, within a few points; the
+    // character is in the shape, the difficulty is not.
+
+    /** Darts, and now and then is simply somewhere else: it left the water and came down there. */
+    LEAP(0.50F, 0F, 0F, 26, 46, 0.032F, 0.30F, 0.002F, 0.00F, 0.04F, 0.00F, 0.55F),
+    /** Holds, then goes decisively and parks hard. A predator choosing its moment. */
+    STALK(0.50F, 0F, 0F, 26, 46, 0.036F, 0.42F, 0.001F, 0.00F, 0.00F, 0.01F, 0.45F),
+    /** Darts at something and thinks better of it: the odd reversal mid-move, guarding its patch. */
+    TERRITORIAL(0.50F, 0F, 0F, 24, 46, 0.032F, 0.28F, 0.001F, 0.008F, 0.00F, 0.02F, 0.55F),
+    /**
+     * A slow glide that never quite stops. Retarget-driven rather than a sine: a sine slow enough to
+     * read as cruising is one a bar can sit on, measured at 95% for a sloppy player.
+     */
+    CRUISE(0.50F, 0F, 0F, 26, 46, 0.026F, 0.12F, 0.001F, 0.00F, 0.00F, 0.00F, 0.91F),
+    /** Heavy and low: long sullen holds a little below where it means to be, and a slow drag between. */
+    BOTTOM_GRIND(0.50F, 0F, 0F, 25, 44, 0.028F, 0.26F, 0.001F, 0.00F, 0.00F, 0.04F, 0.50F),
+    /** Still, still, then the hardest burst any fish has, and still again. */
+    AMBUSH(0.50F, 0F, 0F, 26, 46, 0.042F, 0.55F, 0.000F, 0.00F, 0.00F, 0.00F, 0.42F),
+    /** Quick, sharp and toothy: a snap to a new depth and only a short settle after it. */
+    SNAP(0.50F, 0F, 0F, 26, 45, 0.034F, 0.30F, 0.001F, 0.00F, 0.00F, 0.00F, 0.50F),
+    /** One fish of a school: nervy, small turns, a flinch now and then. */
+    SCHOOL(0.50F, 0F, 0F, 25, 45, 0.032F, 0.26F, 0.0015F, 0.005F, 0.00F, 0.00F, 0.50F),
+    /** Open-water runs that barely slow at the end before the next. */
+    RUN(0.50F, 0F, 0F, 26, 44, 0.034F, 0.28F, 0.001F, 0.00F, 0.00F, 0.00F, 0.60F),
+    /**
+     * Sinuous: no burst and hardly any settle, so it flows through every turn. Not a sine for the
+     * same reason as {@link #CRUISE}.
+     */
+    SERPENTINE(0.50F, 0F, 0F, 26, 46, 0.022F, 0.10F, 0.001F, 0.00F, 0.00F, 0.00F, 0.90F),
+    /** Sits like a rock and strikes like a trap: the longest holds and the heaviest strike. */
+    LURK(0.50F, 0F, 0F, 24, 44, 0.045F, 0.60F, 0.000F, 0.00F, 0.00F, 0.02F, 0.40F),
+    /** A lump that sags: unhurried, a little low, never really trying. */
+    SLUMP(0.50F, 0F, 0F, 24, 44, 0.026F, 0.30F, 0.000F, 0.00F, 0.00F, 0.04F, 0.45F);
 
     /** Track position the sine sweep is centered on. */
     public final float sineCenter;

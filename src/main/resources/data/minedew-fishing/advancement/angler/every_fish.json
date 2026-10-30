@@ -1,0 +1,305 @@
+{
+  "parent": "minedew-fishing:angler/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:fishing_rod"
+    },
+    "title": "Every Fish in the Sea",
+    "description": "Land one of every fish there is",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false,
+    "frame": "challenge"
+  },
+  "criteria": {
+    "cod": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:cod"
+        ]
+      }
+    },
+    "lingcod": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:lingcod"
+        ]
+      }
+    },
+    "largemouth_bass": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:largemouth_bass"
+        ]
+      }
+    },
+    "smallmouth_bass": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:smallmouth_bass"
+        ]
+      }
+    },
+    "perch": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:perch"
+        ]
+      }
+    },
+    "walleye": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:walleye"
+        ]
+      }
+    },
+    "carp": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:carp"
+        ]
+      }
+    },
+    "chub": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:chub"
+        ]
+      }
+    },
+    "bream": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:bream"
+        ]
+      }
+    },
+    "catfish": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:catfish"
+        ]
+      }
+    },
+    "bullhead": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:bullhead"
+        ]
+      }
+    },
+    "pike": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:pike"
+        ]
+      }
+    },
+    "sturgeon": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:sturgeon"
+        ]
+      }
+    },
+    "tilapia": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tilapia"
+        ]
+      }
+    },
+    "blind_cave_fish": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:blind_cave_fish"
+        ]
+      }
+    },
+    "salmon": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:salmon"
+        ]
+      }
+    },
+    "rainbow_trout": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:rainbow_trout"
+        ]
+      }
+    },
+    "tiger_trout": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tiger_trout"
+        ]
+      }
+    },
+    "sardine": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:sardine"
+        ]
+      }
+    },
+    "anchovy": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:anchovy"
+        ]
+      }
+    },
+    "herring": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:herring"
+        ]
+      }
+    },
+    "shad": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:shad"
+        ]
+      }
+    },
+    "tuna": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tuna"
+        ]
+      }
+    },
+    "albacore": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:albacore"
+        ]
+      }
+    },
+    "eel": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:eel"
+        ]
+      }
+    },
+    "dorado": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:dorado"
+        ]
+      }
+    },
+    "pufferfish": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:pufferfish"
+        ]
+      }
+    },
+    "blobfish": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:blobfish"
+        ]
+      }
+    },
+    "stonefish": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:stonefish"
+        ]
+      }
+    },
+    "tropical_fish": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tropical_fish",
+          "minedew-fishing:tropical/anemone",
+          "minedew-fishing:tropical/black_tang",
+          "minedew-fishing:tropical/blue_tang",
+          "minedew-fishing:tropical/butterflyfish",
+          "minedew-fishing:tropical/cichlid",
+          "minedew-fishing:tropical/clownfish",
+          "minedew-fishing:tropical/cotton_candy_betta",
+          "minedew-fishing:tropical/dottyback",
+          "minedew-fishing:tropical/emperor_red_snapper",
+          "minedew-fishing:tropical/goatfish",
+          "minedew-fishing:tropical/moorish_idol",
+          "minedew-fishing:tropical/ornate_butterflyfish",
+          "minedew-fishing:tropical/parrotfish",
+          "minedew-fishing:tropical/queen_angelfish",
+          "minedew-fishing:tropical/red_cichlid",
+          "minedew-fishing:tropical/red_lipped_blenny",
+          "minedew-fishing:tropical/red_snapper",
+          "minedew-fishing:tropical/threadfin",
+          "minedew-fishing:tropical/tomato_clownfish",
+          "minedew-fishing:tropical/triggerfish",
+          "minedew-fishing:tropical/yellowtail_parrotfish",
+          "minedew-fishing:tropical/yellow_tang"
+        ]
+      }
+    },
+    "sunfish": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:sunfish"
+        ]
+      }
+    },
+    "blue_discus": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:blue_discus"
+        ]
+      }
+    },
+    "lionfish": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:lionfish"
+        ]
+      }
+    }
+  },
+  "rewards": {
+    "experience": 500
+  }
+}

@@ -5,10 +5,10 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import org.jspecify.annotations.Nullable;
 
 /**
- * What is on the end of the line, as a movement identity. Five of them, matching what vanilla
- * fishing actually hands you: the four fish plus junk.
+ * What vanilla's fishing table handed over: the four fish plus junk.
  *
  * <p>The identity is not invented and not rolled with made-up odds. The mod rolls vanilla's own
  * {@code minecraft:gameplay/fishing} loot table at the moment of the bite and reads the identity
@@ -18,84 +18,58 @@ import net.minecraft.world.item.Items;
  * {@link #JUNK}, including treasure-table pulls: a saddle on the line should feel like a saddle on
  * the line.
  *
- * <p>Each species' pattern (and accent, where it has one) is FIXED. That is the whole point: a
- * player who has fought a few hundred fish should know what they have hooked from the first second
- * of the fight, before the name is ever shown. {@link FishSize} then layers intensity on top.
- *
- * <p>The speed and aggressiveness multipliers are deliberately narrow. Species is supposed to decide
- * how a fight FEELS and size is supposed to decide how HARD it is, and a wide speed spread here
- * breaks that: an earlier 0.90-1.20 spread made a medium pufferfish land 1% of the time for a laggy
- * player while a medium cod landed 61%, which is a difficulty tier hiding inside a flavour knob.
- * Character comes from the pattern's shape, not from how fast it is played.
+ * <p>A fish roll is then narrowed by the water to the {@link Fish} it really is, which is what it
+ * fights as. As a quarry, each of the four fish here is its plain {@link Fish}: cod fights as cod.
  */
 public enum FishSpecies implements Quarry {
-    /** The common catch and the personality everyone learns first: steady, mid-track, short snaps. */
-    COD("Cod", 1.00F, 0.90F, FishMovementPattern.MODERATE_DART, null, 0, 0, Items.COD,
-        EntityTypes.COD),
-    /** Runs and glides: hard lunges up the track, then a smooth stretch while it recovers. */
-    SALMON("Salmon", 1.03F, 0.95F, FishMovementPattern.FAST_DART,
-        FishMovementPattern.SLOW_SINUSOIDAL, 120, 45, Items.SALMON, EntityTypes.SALMON),
-    /** Skittish: never settles anywhere, quick retargets with a tremor on top. */
-    TROPICAL_FISH("Tropical Fish", 1.02F, 1.00F, FishMovementPattern.FAST_ERRATIC, null, 0, 0,
-        Items.TROPICAL_FISH, EntityTypes.TROPICAL_FISH),
-    /** Sluggish and buoyant: holds one depth for a long time, then moves, and rides a little high. */
-    PUFFERFISH("Pufferfish", 0.98F, 0.90F, FishMovementPattern.SLOW_FLOATER, null, 0, 0,
-        Items.PUFFERFISH, EntityTypes.PUFFERFISH),
+    COD(Items.COD, EntityTypes.COD),
+    SALMON(Items.SALMON, EntityTypes.SALMON),
+    TROPICAL_FISH(Items.TROPICAL_FISH, EntityTypes.TROPICAL_FISH),
+    PUFFERFISH(Items.PUFFERFISH, EntityTypes.PUFFERFISH),
     /** Not a fish at all: dead weight that snags, lurches, and stops. No size variants. */
-    JUNK("Junk", 1.00F, 1.20F, FishMovementPattern.SNAG, null, 0, 0, null, null);
+    JUNK(null, null);
 
-    private final String displayName;
-    private final float baseSpeed;
-    private final float baseAggressiveness;
-    private final FishMovementPattern pattern;
-    private final FishMovementPattern accent;
-    private final int accentPeriodTicks;
-    private final int accentDurationTicks;
-    private final Item bonusItem;
-    private final EntityType<?> displayEntity;
+    private final @Nullable Item bonusItem;
+    private final @Nullable EntityType<?> displayEntity;
 
-    FishSpecies(String displayName, float baseSpeed, float baseAggressiveness,
-                FishMovementPattern pattern, FishMovementPattern accent,
-                int accentPeriodTicks, int accentDurationTicks, Item bonusItem,
-                EntityType<?> displayEntity) {
-        this.displayName = displayName;
-        this.baseSpeed = baseSpeed;
-        this.baseAggressiveness = baseAggressiveness;
-        this.pattern = pattern;
-        this.accent = accent;
-        this.accentPeriodTicks = accentPeriodTicks;
-        this.accentDurationTicks = accentDurationTicks;
+    FishSpecies(@Nullable Item bonusItem, @Nullable EntityType<?> displayEntity) {
         this.bonusItem = bonusItem;
         this.displayEntity = displayEntity;
     }
 
+    @Override
     public String getDisplayName() {
-        return this.displayName;
+        return isJunk() ? "Junk" : Fish.plain(this).getDisplayName();
     }
 
+    @Override
     public float getBaseSpeed() {
-        return this.baseSpeed;
+        return isJunk() ? 1.00F : Fish.plain(this).getBaseSpeed();
     }
 
+    @Override
     public float getBaseAggressiveness() {
-        return this.baseAggressiveness;
+        return isJunk() ? 1.20F : Fish.plain(this).getBaseAggressiveness();
     }
 
+    @Override
     public FishMovementPattern getPattern() {
-        return this.pattern;
+        return isJunk() ? FishMovementPattern.SNAG : Fish.plain(this).getPattern();
     }
 
-    /** Secondary pattern that periodically takes over, or null for a single-pattern species. */
-    public FishMovementPattern getAccent() {
-        return this.accent;
+    @Override
+    public @Nullable FishMovementPattern getAccent() {
+        return isJunk() ? null : Fish.plain(this).getAccent();
     }
 
+    @Override
     public int getAccentPeriodTicks() {
-        return this.accentPeriodTicks;
+        return isJunk() ? 0 : Fish.plain(this).getAccentPeriodTicks();
     }
 
+    @Override
     public int getAccentDurationTicks() {
-        return this.accentDurationTicks;
+        return isJunk() ? 0 : Fish.plain(this).getAccentDurationTicks();
     }
 
     /**
@@ -103,7 +77,8 @@ public enum FishSpecies implements Quarry {
      * reskins into fillets, which is what makes "a bigger fish is more pieces" read naturally;
      * tropical fish and pufferfish are whole creatures and simply come in a bigger haul.
      */
-    public Item getBonusItem() {
+    @Override
+    public @Nullable Item getBonusItem() {
         return this.bonusItem;
     }
 
@@ -112,10 +87,12 @@ public enum FishSpecies implements Quarry {
      * {@link FishSize#getDisplayScale()}), or null for junk, which flies as its item. Purely
      * theater: the payout is items either way, delivered when the flight lands.
      */
-    public EntityType<?> getDisplayEntity() {
+    @Override
+    public @Nullable EntityType<?> getDisplayEntity() {
         return this.displayEntity;
     }
 
+    @Override
     public boolean isJunk() {
         return this == JUNK;
     }
@@ -127,5 +104,14 @@ public enum FishSpecies implements Quarry {
         if (stack.is(Items.TROPICAL_FISH)) return TROPICAL_FISH;
         if (stack.is(Items.PUFFERFISH)) return PUFFERFISH;
         return JUNK;
+    }
+
+    /** The vanilla fish a mob of this type is, or null for any other mob. */
+    public static @Nullable FishSpecies ofBody(EntityType<?> type) {
+        if (type == EntityTypes.COD) return COD;
+        if (type == EntityTypes.SALMON) return SALMON;
+        if (type == EntityTypes.TROPICAL_FISH) return TROPICAL_FISH;
+        if (type == EntityTypes.PUFFERFISH) return PUFFERFISH;
+        return null;
     }
 }

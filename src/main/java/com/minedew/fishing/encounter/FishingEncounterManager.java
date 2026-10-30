@@ -27,6 +27,7 @@ import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.animal.fish.Pufferfish;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.projectile.FishingHook;
 import net.minecraft.world.item.FishingRodItem;
@@ -89,6 +90,22 @@ public final class FishingEncounterManager {
      */
     /** How far above the fish the treasure rides. */
     private static final double ESCORT_RISE = 0.55;
+    /**
+     * How long a landed fish is held up and shown off before it goes in the bag. Long enough to
+     * look at what you caught, short enough that a run of fishing never waits on it.
+     */
+    private static final int SHOW_TICKS = 40;
+    /**
+     * Where it is held: out in front and a little below the eyes, both further for a bigger fish
+     * (per unit of its drawn scale) so a trophy is seen whole rather than filling the screen.
+     */
+    private static final double SHOW_REACH = 1.0;
+    private static final double SHOW_REACH_PER_SCALE = 1.0;
+    private static final double SHOW_DROP = 0.25;
+    private static final double SHOW_DROP_PER_SCALE = 0.25;
+    /** The dangle on the line: how far it swings either way, in blocks, and how fast. */
+    private static final double SHOW_SWING = 0.07;
+    private static final double SHOW_SWING_RATE = 0.22;
     private static final double CATCH_FLIGHT_MIN_SPEED = 0.3;
     private static final double CATCH_FLIGHT_MAX_SPEED = 0.8;
 
@@ -320,7 +337,7 @@ public final class FishingEncounterManager {
 
         // Junk has a size on paper only - it is always SMALL - so landing a boot is not a catch.
         if (!encounter.hooked.species().isJunk()) {
-            MinedewFishing.FISH_LANDED.trigger(player, encounter.hooked.size());
+            MinedewFishing.FISH_LANDED.trigger(player, encounter.hooked.size(), encounter.hooked.species().catchId());
         }
 
         if (hook != null && !hook.isRemoved()) hook.discard();
@@ -506,7 +523,9 @@ public final class FishingEncounterManager {
         // the way in instead of gliding at you like a thrown brick.
         justfatlard.pandorical.api.PandoricalApi.animations()
             .play(fish, "minedew-fishing:flop", true);
-        CATCH_FLIGHTS.add(new CatchFlight(fish, player, payload, spawnEscort(level, origin, treasure)));
+        CATCH_FLIGHTS.add(new CatchFlight(fish, player, payload, spawnEscort(level, origin, treasure),
+            encounter.hooked.species() == com.minedew.fishing.fish.Fish.PUFFERFISH,
+            encounter.hooked.size().getDisplayScale()));
         return true;
     }
 
@@ -538,8 +557,9 @@ public final class FishingEncounterManager {
     }
 
     /**
-     * One landed catch mid-air between the water and the player. The mob is the animation and the
-     * payload is the truth: whatever happens to the animation (arrival, timeout, the mob somehow
+     * One landed catch mid-air between the water and the player, and then held up in front of them
+     * for a moment, dangling on the line, before it goes in the bag. The mob is the animation and
+     * the payload is the truth: whatever happens to the animation (arrival, timeout, the mob somehow
      * vanishing, the player logging out), the payload is delivered exactly once.
      */
     private static final class CatchFlight {
@@ -548,13 +568,22 @@ public final class FishingEncounterManager {
         private final List<ItemStack> payload;
         /** The treasure shown flying in beside the fish; null when the catch won none. */
         private final ItemEntity escort;
+        /** A pufferfish held up puffs up, the way one does out of the water. */
+        private final boolean puffs;
+        /** How big it is drawn, which is how far off it is held. */
+        private final float scale;
         private int ticksLeft = CATCH_FLIGHT_TIMEOUT_TICKS;
+        /** Ticks left on show once it has arrived; -1 while it is still being reeled in. */
+        private int showing = -1;
 
-        CatchFlight(Mob fish, ServerPlayer player, List<ItemStack> payload, ItemEntity escort) {
+        CatchFlight(Mob fish, ServerPlayer player, List<ItemStack> payload, ItemEntity escort, boolean puffs,
+                    float scale) {
             this.fish = fish;
             this.player = player;
             this.payload = payload;
             this.escort = escort;
+            this.puffs = puffs;
+            this.scale = scale;
         }
 
         /** Rides just above the catch, close enough to read as one haul and clear of the fish. */
@@ -581,12 +610,27 @@ public final class FishingEncounterManager {
                 return true;
             }
 
-            // Measured against the point it is actually flying at, not the player's feet: the
-            // two differ by the aim height, so a radius tighter than that would never be met and
-            // the fish would hover at the player's chest until the timeout gave up for it.
-            boolean arrived = this.fish.position().distanceTo(aimPoint()) < CATCH_FLIGHT_ARRIVAL_RADIUS;
-            if (!arrived && !this.fish.isRemoved() && --this.ticksLeft > 0) {
-                steer();
+            if (this.showing < 0 && !this.fish.isRemoved()) {
+                // Measured against the point it is actually flying at, not the player's feet: the
+                // two differ by the hold height, so a radius tighter than that would never be met
+                // and the fish would hover in front of the player until the timeout gave up for it.
+                boolean arrived = this.fish.position().distanceTo(showPoint()) < CATCH_FLIGHT_ARRIVAL_RADIUS;
+                if (!arrived && --this.ticksLeft > 0) {
+                    steer();
+                    placeEscort();
+                    return false;
+                }
+                this.showing = SHOW_TICKS;
+                // A pufferfish is drawn upright out of the water; every other fish is laid on its
+                // side by its renderer, and the dangle stands it back up so its flank faces you
+                boolean puffer = this.fish instanceof Pufferfish;
+                justfatlard.pandorical.api.PandoricalApi.animations()
+                    .play(this.fish, puffer ? "minedew-fishing:dangle_puffer" : "minedew-fishing:dangle", true);
+                if (this.puffs && this.fish instanceof Pufferfish puffed) puffed.setPuffState(2);
+            }
+            if (this.showing > 0 && !this.fish.isRemoved()) {
+                this.showing--;
+                hold();
                 placeEscort();
                 return false;
             }
@@ -603,18 +647,40 @@ public final class FishingEncounterManager {
         }
 
         /**
-         * The line reels it in: velocity is re-aimed at the player every tick, so the flight
-         * arrives no matter what drag did to the last tick's motion or where the player walked
-         * meanwhile. Runs from END_SERVER_TICK, so the value set here is exactly what the mob's
-         * next movement step applies.
+         * Where the catch is held up: in front of the face and a little under it. Follows the
+         * player, so turning away does not leave it behind.
          */
-        /** Chest height rather than feet: a catch arrives at the hands that reeled it in. */
-        private Vec3 aimPoint() {
-            return this.player.position().add(0, this.player.getBbHeight() * 0.5, 0);
+        private Vec3 showPoint() {
+            Vec3 ahead = Vec3.directionFromRotation(0F, this.player.getYRot());
+            return this.player.getEyePosition()
+                .add(ahead.scale(SHOW_REACH + SHOW_REACH_PER_SCALE * this.scale))
+                .add(0, -(SHOW_DROP + SHOW_DROP_PER_SCALE * this.scale), 0);
         }
 
+        /**
+         * On show: side-on to the player, swinging gently on the line. Turned every tick rather than
+         * once, so it stays side-on however the player turns while looking at it.
+         */
+        private void hold() {
+            Vec3 ahead = Vec3.directionFromRotation(0F, this.player.getYRot());
+            Vec3 across = new Vec3(-ahead.z, 0, ahead.x);
+            double swing = Math.sin((SHOW_TICKS - this.showing) * SHOW_SWING_RATE) * SHOW_SWING;
+            Vec3 at = showPoint().add(across.scale(swing));
+            this.fish.setPos(at.x, at.y, at.z);
+            this.fish.setDeltaMovement(Vec3.ZERO);
+
+            float sideOn = this.player.getYRot() + 90F;
+            this.fish.setYRot(sideOn);
+            this.fish.setYHeadRot(sideOn);
+            this.fish.setYBodyRot(sideOn);
+        }
+
+        /**
+         * The line reels it in: re-aimed at the hold point every tick, so the flight arrives
+         * wherever the player walked meanwhile.
+         */
         private void steer() {
-            Vec3 to = aimPoint().subtract(this.fish.position());
+            Vec3 to = showPoint().subtract(this.fish.position());
             double distance = to.length();
             if (distance < 1.0E-4) return;
 

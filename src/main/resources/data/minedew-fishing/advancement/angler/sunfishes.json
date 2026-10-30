@@ -1,0 +1,39 @@
+{
+  "parent": "minedew-fishing:angler/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:cod"
+    },
+    "title": "Sunny Side",
+    "description": "Land a Largemouth Bass (shallow ponds by day), a Smallmouth Bass (rivers and lakes on clear days) and a Sunfish (shallow temperate rivers)",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "largemouth_bass": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:largemouth_bass"
+        ]
+      }
+    },
+    "smallmouth_bass": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:smallmouth_bass"
+        ]
+      }
+    },
+    "sunfish": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:sunfish"
+        ]
+      }
+    }
+  }
+}

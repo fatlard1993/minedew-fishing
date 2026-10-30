@@ -1,0 +1,195 @@
+{
+  "parent": "minedew-fishing:angler/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:tropical_fish"
+    },
+    "title": "Reef Survey",
+    "description": "Land every one of the reef's 22 named tropical fish",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false,
+    "frame": "challenge"
+  },
+  "criteria": {
+    "anemone": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tropical/anemone"
+        ]
+      }
+    },
+    "black_tang": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tropical/black_tang"
+        ]
+      }
+    },
+    "blue_tang": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tropical/blue_tang"
+        ]
+      }
+    },
+    "butterflyfish": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tropical/butterflyfish"
+        ]
+      }
+    },
+    "cichlid": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tropical/cichlid"
+        ]
+      }
+    },
+    "clownfish": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tropical/clownfish"
+        ]
+      }
+    },
+    "cotton_candy_betta": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tropical/cotton_candy_betta"
+        ]
+      }
+    },
+    "dottyback": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tropical/dottyback"
+        ]
+      }
+    },
+    "emperor_red_snapper": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tropical/emperor_red_snapper"
+        ]
+      }
+    },
+    "goatfish": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tropical/goatfish"
+        ]
+      }
+    },
+    "moorish_idol": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tropical/moorish_idol"
+        ]
+      }
+    },
+    "ornate_butterflyfish": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tropical/ornate_butterflyfish"
+        ]
+      }
+    },
+    "parrotfish": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tropical/parrotfish"
+        ]
+      }
+    },
+    "queen_angelfish": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tropical/queen_angelfish"
+        ]
+      }
+    },
+    "red_cichlid": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tropical/red_cichlid"
+        ]
+      }
+    },
+    "red_lipped_blenny": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tropical/red_lipped_blenny"
+        ]
+      }
+    },
+    "red_snapper": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tropical/red_snapper"
+        ]
+      }
+    },
+    "threadfin": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tropical/threadfin"
+        ]
+      }
+    },
+    "tomato_clownfish": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tropical/tomato_clownfish"
+        ]
+      }
+    },
+    "triggerfish": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tropical/triggerfish"
+        ]
+      }
+    },
+    "yellowtail_parrotfish": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tropical/yellowtail_parrotfish"
+        ]
+      }
+    },
+    "yellow_tang": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:tropical/yellow_tang"
+        ]
+      }
+    }
+  },
+  "rewards": {
+    "experience": 250
+  }
+}

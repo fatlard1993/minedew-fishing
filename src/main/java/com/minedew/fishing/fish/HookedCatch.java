@@ -2,10 +2,8 @@ package com.minedew.fishing.fish;
 
 import com.minedew.fishing.access.MinedewFishingHookAccess;
 import com.minedew.fishing.api.MinedewFishingApi;
-import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.tags.BiomeTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.projectile.FishingHook;
 import net.minecraft.world.item.ItemStack;
@@ -18,8 +16,8 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import java.util.List;
 
 /**
- * One bite, resolved up front: what vanilla's loot table actually produced, which movement identity
- * that makes it, and how big it is.
+ * One bite, resolved up front: what vanilla's loot table actually produced, which fish the water
+ * makes of it, and how big it is.
  *
  * <p>The loot is rolled at the moment of the bite rather than at the end of the fight, which is what
  * lets the fight and the payout agree. Reading the identity off a real roll of
@@ -53,9 +51,12 @@ public record HookedCatch(Quarry species, FishSize size, List<ItemStack> loot) {
 
     /**
      * Ask anything registered through {@link MinedewFishingApi} first, and failing that roll
-     * vanilla's fishing table for this hook and classify the result.
+     * vanilla's fishing table for this hook and ask the water which fish of that kind it was (see
+     * {@link Fish}).
      */
     public static HookedCatch roll(ServerLevel level, ServerPlayer player, FishingHook hook, ItemStack rod) {
+        RandomSource random = level.getRandom();
+        Waters waters = Waters.at(level, hook.blockPosition());
         Quarry species = MinedewFishingApi.bite(level, player, hook);
         List<ItemStack> loot;
         if (species != null) {
@@ -63,18 +64,15 @@ public record HookedCatch(Quarry species, FishSize size, List<ItemStack> loot) {
             loot = species.getBonusItem() == null ? List.of() : List.of(new ItemStack(species.getBonusItem()));
         } else {
             loot = rollVanilla(level, player, hook, rod);
-            species = loot.isEmpty() ? FishSpecies.JUNK : FishSpecies.fromLoot(loot.getFirst());
+            FishSpecies rolled = loot.isEmpty() ? FishSpecies.JUNK : FishSpecies.fromLoot(loot.getFirst());
+            species = rolled.isJunk() ? rolled : Fish.bite(rolled, waters, random);
         }
 
-        RandomSource random = level.getRandom();
-        BlockPos pos = hook.blockPosition();
-        boolean deepWater = level.getBiome(pos).is(BiomeTags.IS_DEEP_OCEAN);
-        long timeOfDay = level.getOverworldClockTime() % 24000L;
-        boolean night = timeOfDay >= 13000L && timeOfDay <= 23000L;
+        boolean deepWater = waters.deepOcean() || waters.deep(Waters.DEEP);
         int misses = com.minedew.fishing.encounter.FishingStreaks.get(level.getServer()).misses(player.getUUID());
         FishSize size = species.isJunk()
             ? FishSize.SMALL
-            : FishSize.roll(random, level.isRaining(), deepWater, night, misses);
+            : FishSize.roll(random, level.isRaining(), deepWater, waters.night(), misses);
 
         return new HookedCatch(species, size, loot);
     }

@@ -1,0 +1,23 @@
+{
+  "parent": "minedew-fishing:angler/root",
+  "display": {
+    "icon": {
+      "id": "minecraft:cod"
+    },
+    "title": "Living Fossil",
+    "description": "Land a Sturgeon, rarest of the river, in deep cold water",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "sturgeon": {
+      "trigger": "minedew-fishing:fish_landed",
+      "conditions": {
+        "fish": [
+          "minedew-fishing:sturgeon"
+        ]
+      }
+    }
+  }
+}

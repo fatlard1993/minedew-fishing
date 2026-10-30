@@ -1,0 +1,17 @@
+{
+  "display": {
+    "icon": {
+      "id": "minecraft:fishing_rod"
+    },
+    "title": "Angler's Log",
+    "description": "Every water has its own fish. Land one of each",
+    "background": "minecraft:block/prismarine_bricks",
+    "show_toast": false,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "landed": {
+      "trigger": "minedew-fishing:fish_landed"
+    }
+  }
+}

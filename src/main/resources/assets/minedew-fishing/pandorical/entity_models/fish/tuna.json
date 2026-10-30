@@ -1,0 +1,13 @@
+{
+	"texture": "minedew-fishing:textures/entity/fish/tuna.png",
+	"transforms": {
+		"body_front": {
+			"scale": [1.2, 1.15, 1],
+			"offset": [0, -3, 0]
+		},
+		"body_back": {
+			"scale": [1.1, 1.1, 1],
+			"offset": [0, -2, 0]
+		}
+	}
+}
