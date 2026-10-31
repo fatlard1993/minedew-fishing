@@ -4,6 +4,9 @@
 		"Runs on the server, so a vanilla client can fish."
 	],
 	"versions": {
+		"1.2.1": [
+			"Tropical fish cut into Reef Fish Fillets, like cod and salmon do, so a bigger catch reads as more pieces of one fish."
+		],
 		"1.2.0": [
 			"Thirty-three fish. Vanilla still decides cod, salmon, pufferfish or tropical fish; the water decides which one.",
 			"Rivers, lakes, swamps, the sea and caves each have their own fish, and so do cold and warm water, the hour, the weather and the depth.",

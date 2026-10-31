@@ -26,7 +26,7 @@ public class MinedewFishing implements ModInitializer {
             new com.minedew.fishing.advancement.FishLandedCriterion());
 
     /**
-     * Raw and cooked cod and salmon, reskinned as fillets for Pandorical clients.
+     * Raw and cooked cod and salmon, and raw tropical fish, reskinned as fillets for Pandorical clients.
      *
      * <p>The point is legibility of the size reward: a trophy fish paying out five whole cod reads
      * as five fish, while five fillets read as one big fish cut up, which is what actually happened.
@@ -43,6 +43,7 @@ public class MinedewFishing implements ModInitializer {
         {"minecraft:cooked_cod", "Cooked Whitefish Fillet", "textures/item/cooked_cod_fillet.png"},
         {"minecraft:salmon", "Oily Fish Fillet", "textures/item/salmon_fillet.png"},
         {"minecraft:cooked_salmon", "Cooked Oily Fish Fillet", "textures/item/cooked_salmon_fillet.png"},
+        {"minecraft:tropical_fish", "Reef Fish Fillet", "textures/item/tropical_fish_fillet.png"},
     };
 
     @Override

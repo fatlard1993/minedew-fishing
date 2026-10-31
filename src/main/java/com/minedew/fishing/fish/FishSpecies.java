@@ -73,9 +73,9 @@ public enum FishSpecies implements Quarry {
     }
 
     /**
-     * The item a size bonus pays out in, or null for junk. Cod and salmon are the two the mod
-     * reskins into fillets, which is what makes "a bigger fish is more pieces" read naturally;
-     * tropical fish and pufferfish are whole creatures and simply come in a bigger haul.
+     * The item a size bonus pays out in, or null for junk. Cod, salmon and tropical fish are the
+     * ones the mod reskins into fillets, which is what makes "a bigger fish is more pieces" read
+     * naturally; a pufferfish is a whole creature and simply comes in a bigger haul.
      */
     @Override
     public @Nullable Item getBonusItem() {
