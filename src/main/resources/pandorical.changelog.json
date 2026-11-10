@@ -4,6 +4,9 @@
 		"Runs on the server, so a vanilla client can fish."
 	],
 	"versions": {
+		"1.2.3": [
+			"Drop changelog notes for changes nothing in the game shows."
+		],
 		"1.2.1": [
 			"Tropical fish cut into Reef Fish Fillets, like cod and salmon do, so a bigger catch reads as more pieces of one fish."
 		],
