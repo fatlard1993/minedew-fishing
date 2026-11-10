@@ -4,9 +4,6 @@
 		"Runs on the server, so a vanilla client can fish."
 	],
 	"versions": {
-		"1.2.2": [
-			"Its tests draw a small window unless taking pictures, which runs them faster; nothing in play changes."
-		],
 		"1.2.1": [
 			"Tropical fish cut into Reef Fish Fillets, like cod and salmon do, so a bigger catch reads as more pieces of one fish."
 		],
@@ -20,16 +17,10 @@
 			"An Angler's Log advancement tab, for catching one of each.",
 			"With Village Quests, the fisherman teaches two new lessons: where the fish are, and how kin move alike."
 		],
-		"1.1.1": [
-			"Mod Menu's Donate button leads to sponsoring the author on GitHub. Nothing in play changes."
-		],
 		"1.1.0": [
 			"Other mods can put something new on the line. Cobble Jaws uses it to put sharks in the ocean.",
 			"Whatever another mod adds fights by the same rules as a fish, and its size is rolled the same way.",
 			"Something can come up out of the water alive instead of being landed; the message then reads Surfaced."
-		],
-		"1.0.4": [
-			"Release notes rewritten to read plainly; nothing in play changes."
 		],
 		"1.0.3": [
 			"Salmon fillets are oily fish fillets, to match the Smoked Oily Fish they become.",
