@@ -1,0 +1,33 @@
+{
+  "demo": {
+    "name": "Minedew Fishing",
+    "icon": "minecraft:fishing_rod",
+    "about": [
+      "A Stardew Valley style fishing minigame: when a fish bites you set the hook, then fight it on a bar to land it.",
+      "Cast into the river and right-click as the bobber goes under. Then tap right-click to keep your bar on the fish until the meter fills, and see what you caught."
+    ]
+  },
+  "pvp_preset": 1,
+  "needs": ["minedew-fishing"],
+  "preset": {
+    "name": "Minedew Fishing",
+    "icon": "minecraft:fishing_rod",
+    "pvp": false,
+    "game_mode": "survival",
+    "entry_kit": [
+      {"slot": 0, "item": {"id": "minecraft:fishing_rod", "count": 1, "components": {"minecraft:enchantments": {"minecraft:lure": 3, "minecraft:luck_of_the_sea": 3, "minecraft:unbreaking": 3}}}},
+      {"slot": 1, "item": {"id": "minecraft:oak_planks", "count": 64}},
+      {"slot": 2, "item": {"id": "minecraft:oak_boat", "count": 1}},
+      {"slot": 3, "item": {"id": "minecraft:cooked_beef", "count": 8}}
+    ],
+    "respawn_kit": "entry",
+    "goal": "time",
+    "mobs": "off",
+    "life": 15,
+    "size": 3,
+    "world": "overworld",
+    "shape": "natural",
+    "biome": "minecraft:river",
+    "weather": "clear"
+  }
+}
