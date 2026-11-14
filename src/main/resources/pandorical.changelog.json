@@ -4,6 +4,9 @@
 		"Runs on the server, so a vanilla client can fish."
 	],
 	"versions": {
+		"1.2.4": [
+			"A demo to play in PvP Dimensions' onboarding."
+		],
 		"1.2.3": [
 			"Drop changelog notes for changes nothing in the game shows."
 		],
