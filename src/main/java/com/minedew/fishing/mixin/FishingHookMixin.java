@@ -4,6 +4,7 @@ import com.minedew.fishing.access.MinedewFishingHookAccess;
 import com.minedew.fishing.encounter.FishingEncounterManager;
 import com.minedew.fishing.encounter.MinigameTuning;
 import com.minedew.fishing.fish.HookedCatch;
+import com.minedew.fishing.hud.MinigameHud;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -69,6 +70,8 @@ public abstract class FishingHookMixin implements MinedewFishingHookAccess {
 
         if (!risingEdge) return;
         if (FishingEncounterManager.isPlayerInEncounter(serverPlayer.getUUID())) return;
+        // No minigame to run, so no catch to roll: vanilla's own retrieve() rolls it on the reel-in.
+        if (!MinigameHud.canRender(serverPlayer)) return;
 
         ItemStack rod = minedew$rodStack(serverPlayer);
         if (rod == null) return;
