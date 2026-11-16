@@ -172,6 +172,29 @@ public final class FishingEncounterManager {
         MinigameHud.hide(player);
     }
 
+    /** Drops what is kept for a player who has left. */
+    public static void forget(UUID player) {
+        RECAST_GUARD_UNTIL.remove(player);
+    }
+
+    /**
+     * Hands over every catch still on the line before the world is saved. A flight left running
+     * would write its display fish into the chunk, invulnerable and still, and its haul with nobody
+     * to deliver it.
+     */
+    public static void landAll() {
+        for (CatchFlight flight : CATCH_FLIGHTS) flight.finish();
+        CATCH_FLIGHTS.clear();
+    }
+
+    /** Nothing here belongs to the next world, and a guard's game time means nothing in it. */
+    public static void clear() {
+        ACTIVE.clear();
+        HUD_STATE.clear();
+        RECAST_GUARD_UNTIL.clear();
+        CATCH_FLIGHTS.clear();
+    }
+
     public static void tick(MinecraftServer server) {
         if (!CATCH_FLIGHTS.isEmpty()) {
             CATCH_FLIGHTS.removeIf(CatchFlight::tick);
@@ -600,13 +623,7 @@ public final class FishingEncounterManager {
         /** One tick; true when the flight is over and the haul delivered. */
         boolean tick() {
             if (this.player.isRemoved()) {
-                // Player gone mid-flight: the haul drops where the fish is rather than vanishing
-                for (ItemStack stack : this.payload) {
-                    this.fish.level().addFreshEntity(new ItemEntity(this.fish.level(),
-                        this.fish.getX(), this.fish.getY(), this.fish.getZ(), stack));
-                }
-                this.fish.discard();
-                dropEscort();
+                finish();
                 return true;
             }
 
@@ -635,15 +652,28 @@ public final class FishingEncounterManager {
                 return false;
             }
 
-            if (!this.fish.isRemoved()) this.fish.discard();
-            dropEscort();
-            for (ItemStack stack : this.payload) {
-                if (!this.player.getInventory().add(stack)) {
-                    this.player.drop(stack, false, Prediction.SERVER_ONLY);
-                }
-            }
+            finish();
             playSound(this.player, SoundEvents.ITEM_PICKUP, 0.4F, 1.0F);
             return true;
+        }
+
+        /** Delivers the haul now, wherever the flight has got to, and takes the show down. */
+        void finish() {
+            if (this.player.isRemoved()) {
+                // Player gone mid-flight: the haul drops where the fish is rather than vanishing
+                for (ItemStack stack : this.payload) {
+                    this.fish.level().addFreshEntity(new ItemEntity(this.fish.level(),
+                        this.fish.getX(), this.fish.getY(), this.fish.getZ(), stack));
+                }
+            } else {
+                for (ItemStack stack : this.payload) {
+                    if (!this.player.getInventory().add(stack)) {
+                        this.player.drop(stack, false, Prediction.SERVER_ONLY);
+                    }
+                }
+            }
+            if (!this.fish.isRemoved()) this.fish.discard();
+            dropEscort();
         }
 
         /**

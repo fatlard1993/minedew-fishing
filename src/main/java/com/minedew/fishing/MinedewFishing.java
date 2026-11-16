@@ -4,7 +4,9 @@ import com.minedew.fishing.encounter.FishingEncounterManager;
 import justfatlard.pandorical.api.PandoricalApi;
 import justfatlard.pandorical.api.VanillaItemOverride;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,6 +56,10 @@ public class MinedewFishing implements ModInitializer {
         net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback.EVENT.register(
             (dispatcher, registry, environment) -> FishingCommands.register(dispatcher));
         ServerTickEvents.END_SERVER_TICK.register(FishingEncounterManager::tick);
+        ServerLifecycleEvents.SERVER_STOPPING.register(server -> FishingEncounterManager.landAll());
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> FishingEncounterManager.clear());
+        ServerPlayConnectionEvents.DISCONNECT.register(
+            (handler, server) -> FishingEncounterManager.forget(handler.getPlayer().getUUID()));
         com.minedew.fishing.fish.WildFish.register();
 
         for (String[] override : FILLET_OVERRIDES) {
