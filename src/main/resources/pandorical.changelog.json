@@ -4,6 +4,10 @@
 		"Runs on the server, so a vanilla client can fish."
 	],
 	"versions": {
+		"1.2.5": [
+			"A bite on a client that cannot show the minigame no longer rolls a catch nobody fights for.",
+			"A catch still flying in when the world closes is handed over first, and nothing from one world's fishing is carried into the next."
+		],
 		"1.2.4": [
 			"A demo to play in PvP Dimensions' onboarding."
 		],
